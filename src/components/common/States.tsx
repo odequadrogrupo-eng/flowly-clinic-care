@@ -9,7 +9,7 @@ export function LoadingState({ label = "Carregando..." }: { label?: string }) {
   );
 }
 
-export function ErrorState({ error, label }: { error?: unknown; label?: string }) {
+export function ErrorState({ error, label }: { error?: unknown; label?: string | undefined }) {
   const message = error instanceof Error ? error.message : "Tente novamente em instantes.";
   return (
     <div className="flex flex-col items-center gap-2 p-10 text-center">
@@ -20,7 +20,7 @@ export function ErrorState({ error, label }: { error?: unknown; label?: string }
   );
 }
 
-export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+export function EmptyState({ title, description, action }: { title: string; description?: string | undefined; action?: ReactNode | undefined }) {
   return (
     <div className="flex flex-col items-center gap-2 p-10 text-center">
       <Inbox className="size-6 text-muted-foreground" />
@@ -39,8 +39,8 @@ export function StatCard({
 }: {
   label: string;
   value: ReactNode;
-  hint?: string;
-  icon?: ReactNode;
+  hint?: string | undefined;
+  icon?: ReactNode | undefined;
 }) {
   return (
     <div className="card-soft flex items-start justify-between gap-3 p-5">
