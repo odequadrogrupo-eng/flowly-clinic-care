@@ -76,8 +76,8 @@ export async function syncPendingOperations(clinicId: string) {
 
     try {
       if (record.kind === "queue_status") {
-        const queueId = String(record.payload.queueId ?? "");
-        const nextStatus = String(record.payload.status ?? "");
+        const queueId = String(record.payload["queueId"] ?? "");
+        const nextStatus = String(record.payload["status"] ?? "");
         const { error } = await supabase
           .from("queues" as never)
           .update({ status: nextStatus } as never)
@@ -94,7 +94,7 @@ export async function syncPendingOperations(clinicId: string) {
       ...record,
       status,
       syncedAt: new Date().toISOString(),
-      conflictDetails,
+      ...(conflictDetails ? { conflictDetails } : {}),
     };
 
     await persistOperation(updated);

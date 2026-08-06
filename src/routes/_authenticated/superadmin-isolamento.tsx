@@ -37,7 +37,7 @@ function IsolationContent() {
         .limit(2);
       if (clinicsError) throw clinicsError;
 
-      const [a, b] = clinics ?? [];
+            if (!a || !b) {
       if (!a || !b) {
         return { ready: false, message: "São necessárias pelo menos 2 clínicas para o relatório." };
       }
@@ -94,6 +94,10 @@ function IsolationContent() {
     <div className="space-y-4">
       {!data ? (
         <section className="card-soft p-4">Carregando relatório...</section>
+            ) : !data.clinics || !data.checks ? (
+              <section className="card-soft p-4 text-sm text-muted-foreground">
+                Relatório indisponível no momento.
+              </section>
       ) : !data.ready ? (
         <section className="card-soft p-4 text-sm text-muted-foreground">{data.message}</section>
       ) : (
