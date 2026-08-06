@@ -158,7 +158,10 @@ function DisplayPanel() {
           <>
             <p className="text-sm uppercase tracking-[0.3em] opacity-80">Chamando agora</p>
             <p className="mt-4 text-4xl font-black leading-tight sm:text-7xl">
-              {formatPanelDisplayName(current, panelSettingsQuery.data?.show_mode ?? "name_abbreviated")}
+              {formatPanelDisplayName(
+                current,
+                panelSettingsQuery.data?.show_mode ?? "name_abbreviated",
+              )}
             </p>
             <p className="mt-6 text-2xl font-semibold sm:text-4xl">
               {current.room_name ? `Sala ${current.room_name}` : "Recepção"}
@@ -183,7 +186,10 @@ function DisplayPanel() {
             {previous.map((call) => (
               <div key={call.id} className="rounded-2xl bg-primary-foreground/10 p-4">
                 <p className="text-xl font-bold">
-                  {formatPanelDisplayName(call, panelSettingsQuery.data?.show_mode ?? "name_abbreviated")}
+                  {formatPanelDisplayName(
+                    call,
+                    panelSettingsQuery.data?.show_mode ?? "name_abbreviated",
+                  )}
                 </p>
                 <p className="mt-1 text-sm opacity-85">
                   {call.room_name ?? "Recepção"} · {formatTime(call.called_at)}

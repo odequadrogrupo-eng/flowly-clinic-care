@@ -68,7 +68,8 @@ function PublicPanelPage() {
   const callsQuery = useQuery({
     queryKey: ["public-panel-calls", clinicId],
     enabled: Boolean(clinicId) && configQuery.data?.enabled === true,
-    queryFn: () => listRecentCalls(clinicId!, Math.max(2, configQuery.data?.latest_calls_limit ?? 6)),
+    queryFn: () =>
+      listRecentCalls(clinicId!, Math.max(2, configQuery.data?.latest_calls_limit ?? 6)),
   });
 
   if (configQuery.isLoading || callsQuery.isLoading || clinicQuery.isLoading) {
@@ -123,7 +124,9 @@ function PublicPanelPage() {
         <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {previous.map((call) => (
             <div key={call.id} className="rounded-2xl bg-primary-foreground/10 p-4">
-              <p className="text-lg font-bold">{formatPanelDisplayName(call, configQuery.data.show_mode)}</p>
+              <p className="text-lg font-bold">
+                {formatPanelDisplayName(call, configQuery.data.show_mode)}
+              </p>
               <p className="mt-1 text-sm opacity-85">{formatTime(call.called_at)}</p>
             </div>
           ))}

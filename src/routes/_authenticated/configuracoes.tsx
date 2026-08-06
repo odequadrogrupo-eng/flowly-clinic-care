@@ -259,13 +259,19 @@ function SettingsContent({
   const deleteShiftMutation = useMutation({
     mutationFn: async (shiftId: string) => {
       await deleteDoctorRoomShift(clinicId, shiftId);
-      await logAudit({ clinicId, action: "delete", entity: "doctor_room_shifts", entityId: shiftId });
+      await logAudit({
+        clinicId,
+        action: "delete",
+        entity: "doctor_room_shifts",
+        entityId: shiftId,
+      });
     },
     onSuccess: () => {
       toast.success("Escala removida");
       queryClient.invalidateQueries({ queryKey: ["doctor-room-shifts", clinicId, shiftDate] });
     },
-    onError: (error: Error) => toast.error("Erro ao remover escala", { description: error.message }),
+    onError: (error: Error) =>
+      toast.error("Erro ao remover escala", { description: error.message }),
   });
 
   const regenerateKioskMutation = useMutation({
@@ -703,7 +709,8 @@ function SettingsContent({
       <section className="card-soft p-5">
         <h2 className="font-semibold">Escala médico x sala</h2>
         <p className="text-sm text-muted-foreground">
-          Configure por data, turno e horário. Conflitos de médico ou sala no mesmo período são bloqueados.
+          Configure por data, turno e horário. Conflitos de médico ou sala no mesmo período são
+          bloqueados.
         </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -756,11 +763,19 @@ function SettingsContent({
           </div>
           <div className="space-y-2">
             <Label>Início</Label>
-            <Input type="time" value={shiftStartTime} onChange={(e) => setShiftStartTime(e.target.value)} />
+            <Input
+              type="time"
+              value={shiftStartTime}
+              onChange={(e) => setShiftStartTime(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Fim</Label>
-            <Input type="time" value={shiftEndTime} onChange={(e) => setShiftEndTime(e.target.value)} />
+            <Input
+              type="time"
+              value={shiftEndTime}
+              onChange={(e) => setShiftEndTime(e.target.value)}
+            />
           </div>
         </div>
 
@@ -772,16 +787,22 @@ function SettingsContent({
 
         <div className="mt-4 space-y-2">
           {(shiftsQuery.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma escala registrada para esta data.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma escala registrada para esta data.
+            </p>
           ) : (
             (shiftsQuery.data ?? []).map((shift) => (
-              <div key={shift.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+              <div
+                key={shift.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+              >
                 <div>
                   <p className="font-medium">
                     {shift.professionals?.full_name ?? "Médico"} · {shift.rooms?.name ?? "Sala"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {inferShiftPeriod(shift.start_time)} · {shift.start_time.slice(0, 5)} às {shift.end_time.slice(0, 5)}
+                    {inferShiftPeriod(shift.start_time)} · {shift.start_time.slice(0, 5)} às{" "}
+                    {shift.end_time.slice(0, 5)}
                   </p>
                 </div>
                 <Button
