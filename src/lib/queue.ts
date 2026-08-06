@@ -57,11 +57,13 @@ export async function logAudit(input: {
 
 /** Public display name — only first name + last initial, never full personal data. */
 export function displayName(fullName: string) {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  const last = parts[parts.length - 1];
-  return `${parts[0]} ${last.charAt(0).toUpperCase()}.`;
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0] ?? "Paciente";
+  if (parts.length < 2) return first;
+  const last = parts[parts.length - 1] ?? "";
+  return `${first} ${last.charAt(0).toUpperCase()}.`;
 }
+
 
 export async function callQueueItem(item: QueueItem, clinicId: string) {
   const now = new Date().toISOString();
