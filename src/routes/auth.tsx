@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Brand } from "@/components/layout/AppShell";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,8 +155,18 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
         <Link to="/" className="mx-auto">
-          <Brand />
+          <Brand logoSrc="/brands/club-medico/logo.png" fallbackText="Club Médico" />
         </Link>
+
+        <div className="mt-4 flex justify-center">
+          <ClinicLogo
+            src="/brands/club-medico/logo.png"
+            alt="Club Médico"
+            fallbackText="Club Médico"
+            className="h-16 w-40"
+            imgClassName="h-12"
+          />
+        </div>
 
         <div className="card-soft mt-6 p-6">
           <Tabs value={mode} onValueChange={setMode}>

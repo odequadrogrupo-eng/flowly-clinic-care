@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "quality:check": "npm run typecheck && npm run build",
     "quality:strict": "npm run typecheck && npm run lint && npm run build",
-    "seed:demo:sql": "echo \"Run in Supabase SQL editor: select public.seed_demo_clinic('Club Medico');\""
+    "seed:demo:sql": "echo \"Run in Supabase SQL editor: select public.seed_demo_clinic('Club Medico');\"",
+    "seed:club-medico": "npx --yes tsx scripts/seed-club-medico.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

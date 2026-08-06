@@ -67,14 +67,23 @@ export type KioskSettingsRow = {
 
 export type PanelSettingsRow = {
   clinic_id: string;
+  name: string;
   enabled: boolean;
   public_token: string;
   show_mode: "ticket_only" | "first_name" | "name_abbreviated";
   show_destination: boolean;
+  full_screen: boolean;
+  show_clock: boolean;
+  show_latest_calls: boolean;
+  latest_calls_limit: number;
+  sound_enabled: boolean;
   voice_enabled: boolean;
   voice_name: string | null;
   voice_volume: number;
   voice_rate: number;
+  voice_pitch: number;
+  voice_repeat_count: number;
+  voice_repeat_interval_seconds: number;
   phrase_template: string;
 };
 
@@ -118,7 +127,7 @@ export async function regenerateKioskToken(clinicId: string) {
 export async function getPanelSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("panel_settings" as never)
-    .select("clinic_id, enabled, public_token, show_mode, show_destination, voice_enabled, voice_name, voice_volume, voice_rate, phrase_template" as never)
+    .select("clinic_id, name, enabled, public_token, show_mode, show_destination, full_screen, show_clock, show_latest_calls, latest_calls_limit, sound_enabled, voice_enabled, voice_name, voice_volume, voice_rate, voice_pitch, voice_repeat_count, voice_repeat_interval_seconds, phrase_template" as never)
     .eq("clinic_id", clinicId)
     .single();
   if (error) throw error;

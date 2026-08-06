@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { getKioskPublicConfig, issueTicketByToken } from "@/services/totem";
 import { buildPrintHtml } from "@/services/print";
 
@@ -75,7 +76,13 @@ function KioskPage() {
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border bg-card p-6 text-center shadow-sm">
-        {config.clinic_logo ? <img src={config.clinic_logo} alt={config.clinic_name} className="mb-3 h-16 object-contain" /> : null}
+        <ClinicLogo
+          src={config.clinic_logo ?? "/brands/club-medico/logo.png"}
+          alt={config.clinic_name ?? "Club Médico"}
+          fallbackText="Club Médico"
+          className="mb-3 h-16 w-44"
+          imgClassName="h-12"
+        />
         <h1 className="text-2xl font-bold">{config.clinic_name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{config.custom_text || "Selecione o tipo de atendimento"}</p>
 

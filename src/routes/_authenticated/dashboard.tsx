@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState, ErrorState, LoadingState, StatCard } from "@/components/common/States";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { Page } from "@/components/layout/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -269,6 +270,20 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
 
   return (
     <div className="space-y-6">
+      <section className="card-soft flex items-center justify-between gap-4 p-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Clínica ativa</p>
+          <p className="text-lg font-semibold">{profile.clinics?.name ?? "Club Médico"}</p>
+        </div>
+        <ClinicLogo
+          src={profile.clinics?.logo_url ?? "/brands/club-medico/logo.png"}
+          alt={profile.clinics?.name ?? "Club Médico"}
+          fallbackText="Club Médico"
+          className="h-16 w-44"
+          imgClassName="h-12"
+        />
+      </section>
+
       {profile.role === "admin" ? (
         <>
           <section className="card-soft p-5">

@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { Page } from "@/components/layout/Page";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,6 +198,16 @@ function SettingsContent({
         <h2 className="font-semibold">Cadastro da clínica</h2>
         <p className="text-sm text-muted-foreground">Esses dados são usados em todo o sistema.</p>
 
+      <div className="mt-4">
+        <ClinicLogo
+          src={form.logo_url || "/brands/club-medico/logo.png"}
+          alt={form.name || "Club Médico"}
+          fallbackText="Club Médico"
+          className="h-16 w-44"
+          imgClassName="h-12"
+        />
+      </div>
+
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="cfg-name">Nome fantasia</Label>
@@ -322,9 +333,26 @@ function SettingsContent({
         <section className="card-soft p-5">
           <h2 className="font-semibold">Painel de TV</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <Input value={panelForm.name} onChange={(e) => setPanelForm({ ...panelForm, name: e.target.value })} placeholder="Nome do painel" />
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={panelForm.enabled} onChange={(e) => setPanelForm({ ...panelForm, enabled: e.target.checked })} />
               Painel ativo
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={panelForm.full_screen} onChange={(e) => setPanelForm({ ...panelForm, full_screen: e.target.checked })} />
+              Tela cheia
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={panelForm.show_clock} onChange={(e) => setPanelForm({ ...panelForm, show_clock: e.target.checked })} />
+              Exibir relógio
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={panelForm.show_latest_calls} onChange={(e) => setPanelForm({ ...panelForm, show_latest_calls: e.target.checked })} />
+              Exibir últimas chamadas
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={panelForm.sound_enabled} onChange={(e) => setPanelForm({ ...panelForm, sound_enabled: e.target.checked })} />
+              Aviso sonoro
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={panelForm.voice_enabled} onChange={(e) => setPanelForm({ ...panelForm, voice_enabled: e.target.checked })} />
@@ -344,6 +372,30 @@ function SettingsContent({
             <div className="space-y-2">
               <Label>Template de voz</Label>
               <Input value={panelForm.phrase_template} onChange={(e) => setPanelForm({ ...panelForm, phrase_template: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Volume (0 a 1)</Label>
+              <Input type="number" min="0" max="1" step="0.05" value={panelForm.voice_volume} onChange={(e) => setPanelForm({ ...panelForm, voice_volume: Number(e.target.value) || 0 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Velocidade</Label>
+              <Input type="number" min="0.5" max="2" step="0.05" value={panelForm.voice_rate} onChange={(e) => setPanelForm({ ...panelForm, voice_rate: Number(e.target.value) || 1 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tom</Label>
+              <Input type="number" min="0" max="2" step="0.05" value={panelForm.voice_pitch} onChange={(e) => setPanelForm({ ...panelForm, voice_pitch: Number(e.target.value) || 1 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Repetições</Label>
+              <Input type="number" min="1" max="5" step="1" value={panelForm.voice_repeat_count} onChange={(e) => setPanelForm({ ...panelForm, voice_repeat_count: Number(e.target.value) || 1 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Intervalo entre repetições (s)</Label>
+              <Input type="number" min="1" max="10" step="1" value={panelForm.voice_repeat_interval_seconds} onChange={(e) => setPanelForm({ ...panelForm, voice_repeat_interval_seconds: Number(e.target.value) || 1 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Qtd. de últimas chamadas</Label>
+              <Input type="number" min="1" max="20" step="1" value={panelForm.latest_calls_limit} onChange={(e) => setPanelForm({ ...panelForm, latest_calls_limit: Number(e.target.value) || 5 })} />
             </div>
           </div>
           <div className="mt-4 rounded-xl border p-3">

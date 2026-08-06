@@ -12,6 +12,7 @@ export type OperationalReport = {
 
 type PrintableReportInput = {
   clinicName: string;
+  logoUrl?: string | null;
   fromDate: string;
   toDate: string;
   generatedAtIso?: string;
@@ -37,6 +38,8 @@ export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
     h1 { margin: 0 0 8px; font-size: 22px; }
     p { margin: 0 0 6px; }
     .meta { color: #555; margin-bottom: 16px; }
+    .logo-wrap { margin-bottom: 12px; }
+    .logo { max-height: 56px; width: auto; object-fit: contain; }
     .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
     .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
     .label { font-size: 12px; color: #666; }
@@ -48,6 +51,7 @@ export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
   </style>
 </head>
 <body>
+  <div class=\"logo-wrap\">${input.logoUrl ? `<img class=\"logo\" src=\"${input.logoUrl}\" alt=\"${input.clinicName}\" />` : ""}</div>
   <h1>Relatório Operacional</h1>
   <p><strong>${input.clinicName}</strong></p>
   <p class=\"meta\">Período: ${input.fromDate} até ${input.toDate} · Gerado em ${generatedAt}</p>

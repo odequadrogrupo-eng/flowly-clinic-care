@@ -5,6 +5,7 @@ import { Activity, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState, StatCard } from "@/components/common/States";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { Page } from "@/components/layout/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,12 +95,18 @@ function openPdfReadyReport(html: string) {
 function ReportsPage() {
   return (
     <Page title="Relatórios" description="Indicadores operacionais" allowed={["admin", "receptionist", "attendant"]}>
-      {(profile) => <ReportsContent clinicId={profile.clinic_id} clinicName={profile.clinics?.name ?? "Clínica"} />}
+      {(profile) => (
+        <ReportsContent
+          clinicId={profile.clinic_id}
+          clinicName={profile.clinics?.name ?? "Clínica"}
+          clinicLogoUrl={profile.clinics?.logo_url ?? null}
+        />
+      )}
     </Page>
   );
 }
 
-function ReportsContent({ clinicId, clinicName }: { clinicId: string; clinicName: string }) {
+function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: string; clinicName: string; clinicLogoUrl: string | null }) {
   const [fromDate, setFromDate] = useState(daysAgo(6));
   const [toDate, setToDate] = useState(isoToday());
 
@@ -127,6 +134,20 @@ function ReportsContent({ clinicId, clinicName }: { clinicId: string; clinicName
 
   return (
     <div className="space-y-6">
+      <section className="card-soft flex items-center justify-between gap-4 p-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Relatórios de</p>
+          <p className="text-lg font-semibold">{clinicName}</p>
+        </div>
+        <ClinicLogo
+          src={clinicLogoUrl ?? "/brands/club-medico/logo.png"}
+          alt={clinicName}
+          fallbackText="Club Médico"
+          className="h-16 w-44"
+          imgClassName="h-12"
+        />
+      </section>
+
       <div className="grid gap-3 rounded-2xl border p-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="report-from">De</Label>
@@ -149,6 +170,7 @@ function ReportsContent({ clinicId, clinicName }: { clinicId: string; clinicName
               onClick={() => {
                 const html = buildOperationalReportPrintHtml({
                   clinicName,
+                  logoUrl: clinicLogoUrl ?? "/brands/club-medico/logo.png",
                   fromDate,
                   toDate,
                   report,

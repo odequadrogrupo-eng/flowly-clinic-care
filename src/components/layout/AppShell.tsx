@@ -24,6 +24,7 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { canManage, roleLabels, type AppRole } from "@/hooks/useAuth";
 import { signOutCurrentUser } from "@/services/auth";
 import { cn } from "@/lib/utils";
@@ -48,12 +49,22 @@ const navItems: NavItem[] = [
   { to: "/painel", label: "Painel de chamada", icon: MonitorPlay, roles: ["admin", "receptionist", "attendant", "professional", "public_display"] },
 ];
 
-export function Brand({ className }: { className?: string }) {
+export function Brand({ className, logoSrc, fallbackText }: { className?: string; logoSrc?: string | null | undefined; fallbackText?: string }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-        <Activity className="size-5" />
-      </span>
+      {logoSrc ? (
+        <ClinicLogo
+          src={logoSrc}
+          alt={fallbackText ?? "Clinica"}
+          fallbackText={fallbackText ?? "Clinica"}
+          className="h-11 w-20"
+          imgClassName="h-9"
+        />
+      ) : (
+        <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <Activity className="size-5" />
+        </span>
+      )}
       <span className="text-lg font-bold tracking-tight">ClinicFlow</span>
     </div>
   );
@@ -95,6 +106,7 @@ export function AppShell({
   actions,
   role,
   clinicName,
+  clinicLogoUrl,
   userName,
 }: {
   children: ReactNode;
@@ -103,6 +115,7 @@ export function AppShell({
   actions?: ReactNode | undefined;
   role: AppRole;
   clinicName: string;
+  clinicLogoUrl?: string | null;
   userName: string;
 }) {
   const navigate = useNavigate();
@@ -133,7 +146,7 @@ export function AppShell({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-[268px] shrink-0 flex-col gap-6 border-r bg-sidebar p-4 lg:flex">
-        <Brand className="px-1 pt-2" />
+        <Brand className="px-1 pt-2" logoSrc={clinicLogoUrl} fallbackText={clinicName} />
         <NavList role={role} />
         {footer}
       </aside>
@@ -147,7 +160,7 @@ export function AppShell({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex w-[280px] flex-col gap-6 p-4">
-              <Brand className="px-1 pt-2" />
+              <Brand className="px-1 pt-2" logoSrc={clinicLogoUrl} fallbackText={clinicName} />
               <NavList role={role} onNavigate={() => setMobileOpen(false)} />
               {footer}
             </SheetContent>

@@ -7,8 +7,9 @@ import { LoadingState } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useAuth";
 import { useRealtime } from "@/hooks/useRealtime";
-import { formatTime, speak } from "@/lib/queue";
+import { formatTime } from "@/lib/queue";
 import { listRecentCalls } from "@/services/calls";
+import { getPanelSettings } from "@/services/totem";
 
 export const Route = createFileRoute("/painel")({
   ssr: false,
@@ -42,16 +43,60 @@ function DisplayPanel() {
     queryFn: () => listRecentCalls(clinicId!, 6),
   });
 
+  const panelSettingsQuery = useQuery({
+    queryKey: ["panel-settings-runtime", clinicId],
+    enabled: Boolean(clinicId),
+    queryFn: () => getPanelSettings(clinicId!),
+  });
+
   const current = data?.[0];
   const previous = (data ?? []).slice(1, 5);
+
+  function buildVoiceText(template: string, input: { ticket: string; destination: string; firstName: string }) {
+    return template
+      .replaceAll("{{ticket}}", input.ticket)
+      .replaceAll("{{destination}}", input.destination)
+      .replaceAll("{{first_name}}", input.firstName);
+  }
+
+  function speakWithSettings(text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const cfg = panelSettingsQuery.data;
+    if (!cfg?.voice_enabled) return;
+
+    const repeatCount = Math.max(1, cfg.voice_repeat_count || 1);
+    const intervalMs = Math.max(1, cfg.voice_repeat_interval_seconds || 1) * 1000;
+    const voiceName = cfg.voice_name;
+
+    const runOnce = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "pt-BR";
+      utterance.volume = Math.max(0, Math.min(1, cfg.voice_volume || 1));
+      utterance.rate = Math.max(0.5, Math.min(2, cfg.voice_rate || 1));
+      utterance.pitch = Math.max(0, Math.min(2, cfg.voice_pitch || 1));
+      if (voiceName) {
+        const selected = window.speechSynthesis.getVoices().find((voice) => voice.name === voiceName);
+        if (selected) utterance.voice = selected;
+      }
+      window.speechSynthesis.speak(utterance);
+    };
+
+    window.speechSynthesis.cancel();
+    for (let index = 0; index < repeatCount; index += 1) {
+      window.setTimeout(runOnce, intervalMs * index);
+    }
+  }
 
   useEffect(() => {
     if (!current || !sound || current.id === lastSpoken || profile?.clinics?.voice_enabled === false) return;
     setLastSpoken(current.id);
-    speak(
-      `${current.display_name}, ${current.room_name ? `sala ${current.room_name}` : "dirija-se à recepção"}`,
-    );
-  }, [current, sound, lastSpoken, profile?.clinics?.voice_enabled]);
+    const ticketLike = current.display_name;
+    const firstName = current.display_name.split(" ")[0] ?? current.display_name;
+    const destination = current.room_name ? `consultório ${current.room_name}` : "recepção";
+    const phraseTemplate = panelSettingsQuery.data?.phrase_template ?? "Senha {{ticket}}, dirigir-se a {{destination}}.";
+    const text = buildVoiceText(phraseTemplate, { ticket: ticketLike, destination, firstName });
+    speakWithSettings(text);
+  }, [current, sound, lastSpoken, profile?.clinics?.voice_enabled, panelSettingsQuery.data]);
 
   if (isLoading) return <LoadingState label="Carregando painel..." />;
 
