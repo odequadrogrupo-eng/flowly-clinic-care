@@ -102,6 +102,12 @@ const navItems: NavItem[] = [
     roles: ["superadmin", "admin"],
   },
   {
+    to: "/contingencia",
+    label: "Contingência",
+    icon: Shield,
+    roles: ["superadmin", "admin", "receptionist", "attendant"],
+  },
+  {
     to: "/impressao",
     label: "Impressora",
     icon: Printer,
@@ -135,6 +141,30 @@ const navItems: NavItem[] = [
     to: "/superadmin-clinicas",
     label: "Superadmin · Clínicas",
     icon: Building2,
+    roles: ["superadmin"],
+  },
+  {
+    to: "/superadmin-onboarding",
+    label: "Superadmin · Onboarding",
+    icon: Building2,
+    roles: ["superadmin"],
+  },
+  {
+    to: "/superadmin-monitoramento",
+    label: "Superadmin · Monitoramento",
+    icon: Activity,
+    roles: ["superadmin"],
+  },
+  {
+    to: "/superadmin-backup",
+    label: "Superadmin · Backup",
+    icon: Shield,
+    roles: ["superadmin"],
+  },
+  {
+    to: "/superadmin-isolamento",
+    label: "Superadmin · Isolamento",
+    icon: Shield,
     roles: ["superadmin"],
   },
 ];

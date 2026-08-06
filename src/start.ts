@@ -2,6 +2,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { logPlatformError } from "@/services/platform-monitoring";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -29,3 +30,31 @@ export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));
+
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event) => {
+    void logPlatformError({
+      clinicId: null,
+      source: "frontend",
+      route: window.location.pathname,
+      message: event.message || "Runtime error",
+      severity: "error",
+      appVersion: "2026.08",
+      environment: import.meta.env.MODE,
+      context: { filename: event.filename, lineno: event.lineno, colno: event.colno },
+    }).catch(() => undefined);
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    void logPlatformError({
+      clinicId: null,
+      source: "frontend",
+      route: window.location.pathname,
+      message: event.reason instanceof Error ? event.reason.message : "Unhandled rejection",
+      severity: "error",
+      appVersion: "2026.08",
+      environment: import.meta.env.MODE,
+      context: { reason: String(event.reason) },
+    }).catch(() => undefined);
+  });
+}

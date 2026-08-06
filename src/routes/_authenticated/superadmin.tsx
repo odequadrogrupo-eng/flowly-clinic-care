@@ -26,6 +26,12 @@ function SuperadminHubPage() {
             buttonLabel="Abrir Clínicas"
           />
           <HubCard
+            title="Onboarding de Clínica"
+            description="Fluxo guiado para criar clínica, estrutura inicial e primeiro administrador."
+            href="/superadmin-onboarding"
+            buttonLabel="Abrir Onboarding"
+          />
+          <HubCard
             title="Comercial"
             description="Materiais para apresentação presencial do ClinicFlow."
             href="/apresentacao"
@@ -54,6 +60,30 @@ function SuperadminHubPage() {
             description="Configurações gerais e políticas globais por clínica/tenant."
             href="/configuracoes"
             buttonLabel="Abrir Configurações"
+          />
+          <HubCard
+            title="Monitoramento"
+            description="Erros por clínica, rota e versão para observabilidade segura."
+            href="/superadmin-monitoramento"
+            buttonLabel="Abrir Monitoramento"
+          />
+          <HubCard
+            title="Backup e Recuperação"
+            description="Exportações por clínica, retenção e operação de recuperação assistida."
+            href="/superadmin-backup"
+            buttonLabel="Abrir Backup"
+          />
+          <HubCard
+            title="Isolamento Multiempresa"
+            description="Validação automática de segregação de dados entre clínicas."
+            href="/superadmin-isolamento"
+            buttonLabel="Abrir Isolamento"
+          />
+          <HubCard
+            title="Contingência Offline"
+            description="Operações pendentes, sincronização e conflitos de reconexão."
+            href="/contingencia"
+            buttonLabel="Abrir Contingência"
           />
         </div>
       )}
