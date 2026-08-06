@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTenantBranding } from "@/hooks/useTenantBranding";
 import { requestPasswordReset, signInWithEmail, signUpWithClinic } from "@/services/auth";
 
 export const Route = createFileRoute("/auth")({
@@ -35,7 +34,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { data: tenantBranding } = useTenantBranding();
   const [mode, setMode] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,17 +164,14 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-10">
         <Link to="/" className="mx-auto">
-          <Brand
-            logoSrc={tenantBranding?.logoUrl ?? null}
-            fallbackText={tenantBranding?.displayName ?? "ClinicFlow"}
-          />
+          <Brand fallbackText="ClinicFlow" />
         </Link>
 
         <div className="mt-4 flex justify-center">
           <ClinicLogo
-            src={tenantBranding?.logoUrl ?? null}
-            alt={tenantBranding?.displayName ?? "ClinicFlow"}
-            fallbackText={tenantBranding?.displayName ?? "ClinicFlow"}
+            src={null}
+            alt="ClinicFlow"
+            fallbackText="ClinicFlow"
             className="h-16 w-40"
             imgClassName="h-12"
           />

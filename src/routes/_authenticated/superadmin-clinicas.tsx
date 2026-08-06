@@ -9,14 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  deleteClinicBySuperadmin,
   listClinicsForSuperadmin,
   type SuperadminClinicInput,
+  switchSuperadminClinicContext,
+  toggleClinicStatusBySuperadmin,
   upsertClinicBySuperadmin,
 } from "@/services/superadmin";
-import {
-  getSelectedClinicIdForSuperadmin,
-  setSelectedClinicIdForSuperadmin,
-} from "@/services/superadmin-context";
 
 export const Route = createFileRoute("/_authenticated/superadmin-clinicas")({
   component: SuperadminClinicsPage,
@@ -57,14 +56,17 @@ function SuperadminClinicsPage() {
       description="Criação e gestão global de clínicas SaaS"
       allowed={["superadmin"]}
     >
-      {(profile) => <SuperadminClinicsContent role={profile.role} />}
+      {(profile) => (
+        <SuperadminClinicsContent role={profile.role} currentClinicId={profile.clinic_id} />
+      )}
     </Page>
   );
 }
 
-function SuperadminClinicsContent({ role }: { role: AppRole }) {
+function SuperadminClinicsContent({ role, currentClinicId }: { role: AppRole; currentClinicId: string }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SuperadminClinicInput>(initialForm);
+  const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
   const isSuperadmin = role === "superadmin";
 
   const clinicsQuery = useQuery({
@@ -74,16 +76,55 @@ function SuperadminClinicsContent({ role }: { role: AppRole }) {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => upsertClinicBySuperadmin(form),
+    mutationFn: async () => upsertClinicBySuperadmin(form, editingClinicId ?? undefined),
     onSuccess: () => {
-      toast.success("Clínica criada e administrador inicial provisionado");
+      toast.success(editingClinicId ? "Clínica atualizada" : "Clínica criada e admin provisionado");
       setForm(initialForm);
+      setEditingClinicId(null);
       queryClient.invalidateQueries({ queryKey: ["superadmin-clinics"] });
     },
     onError: (error: Error) => toast.error("Erro ao criar clínica", { description: error.message }),
   });
 
-  const selectedClinicId = useMemo(() => getSelectedClinicIdForSuperadmin(), []);
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (input: { clinicId: string; nextStatus: "active" | "inactive" }) =>
+      toggleClinicStatusBySuperadmin(input.clinicId, input.nextStatus),
+    onSuccess: () => {
+      toast.success("Status da clínica atualizado");
+      queryClient.invalidateQueries({ queryKey: ["superadmin-clinics"] });
+    },
+    onError: (error: Error) =>
+      toast.error("Erro ao atualizar status da clínica", { description: error.message }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (clinicId: string) => deleteClinicBySuperadmin(clinicId),
+    onSuccess: () => {
+      toast.success("Clínica excluída");
+      queryClient.invalidateQueries({ queryKey: ["superadmin-clinics"] });
+    },
+    onError: (error: Error) => toast.error("Erro ao excluir clínica", { description: error.message }),
+  });
+
+  const switchClinicMutation = useMutation({
+    mutationFn: async (clinicId: string) => switchSuperadminClinicContext(clinicId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+      toast.success("Contexto da clínica atualizado");
+    },
+    onError: (error: Error) =>
+      toast.error("Erro ao trocar contexto da clínica", { description: error.message }),
+  });
+  const metrics = useMemo(() => {
+    const clinics = clinicsQuery.data ?? [];
+    const active = clinics.filter((clinic) => clinic.status === "active").length;
+    const inactive = clinics.filter((clinic) => clinic.status !== "active").length;
+    return {
+      total: clinics.length,
+      active,
+      inactive,
+    };
+  }, [clinicsQuery.data]);
 
   if (!isSuperadmin) {
     return (
@@ -97,8 +138,25 @@ function SuperadminClinicsContent({ role }: { role: AppRole }) {
 
   return (
     <div className="space-y-4">
+      <section className="grid gap-3 md:grid-cols-3">
+        <div className="card-soft p-4">
+          <p className="text-xs text-muted-foreground">Total de clínicas</p>
+          <p className="text-2xl font-bold">{metrics.total}</p>
+        </div>
+        <div className="card-soft p-4">
+          <p className="text-xs text-muted-foreground">Clínicas ativas</p>
+          <p className="text-2xl font-bold text-emerald-600">{metrics.active}</p>
+        </div>
+        <div className="card-soft p-4">
+          <p className="text-xs text-muted-foreground">Clínicas inativas</p>
+          <p className="text-2xl font-bold text-amber-600">{metrics.inactive}</p>
+        </div>
+      </section>
+
       <section className="card-soft p-4">
-        <h2 className="font-semibold">Nova clínica (fluxo B2B)</h2>
+        <h2 className="font-semibold">
+          {editingClinicId ? "Editar clínica (fluxo B2B)" : "Nova clínica (fluxo B2B)"}
+        </h2>
         <p className="text-sm text-muted-foreground">
           Somente Superadmin cria clínicas e administrador inicial.
         </p>
@@ -224,9 +282,26 @@ function SuperadminClinicsContent({ role }: { role: AppRole }) {
         </div>
 
         <div className="mt-4 flex justify-end">
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? "Criando..." : "Criar clínica"}
-          </Button>
+          <div className="flex gap-2">
+            {editingClinicId ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingClinicId(null);
+                  setForm(initialForm);
+                }}
+              >
+                Cancelar edição
+              </Button>
+            ) : null}
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending
+                ? "Salvando..."
+                : editingClinicId
+                  ? "Salvar clínica"
+                  : "Criar clínica"}
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -246,19 +321,73 @@ function SuperadminClinicsContent({ role }: { role: AppRole }) {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  variant={selectedClinicId === clinic.id ? "default" : "outline"}
+                  variant={currentClinicId === clinic.id ? "default" : "outline"}
                   size="sm"
-                  onClick={() => {
-                    setSelectedClinicIdForSuperadmin(clinic.id);
-                    toast.success(`Contexto alterado para ${clinic.name}`);
-                  }}
+                  onClick={() => switchClinicMutation.mutate(clinic.id)}
+                  disabled={switchClinicMutation.isPending}
                 >
                   Acessar clínica
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingClinicId(clinic.id);
+                    setForm((prev) => ({
+                      ...prev,
+                      name: clinic.name,
+                      legal_name: clinic.legal_name ?? "",
+                      document: clinic.document ?? "",
+                      address: clinic.address ?? "",
+                      city: clinic.city ?? "",
+                      state: clinic.state ?? "",
+                      zip_code: clinic.zip_code ?? "",
+                      phone: clinic.phone ?? "",
+                      email: clinic.email ?? "",
+                      logo_url: clinic.logo_url ?? "",
+                      plan: clinic.plan,
+                      status: clinic.status === "inactive" ? "inactive" : "active",
+                      tenant_slug: clinic.tenant_slug ?? "",
+                    }));
+                  }}
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    toggleStatusMutation.mutate({
+                      clinicId: clinic.id,
+                      nextStatus: clinic.status === "active" ? "inactive" : "active",
+                    })
+                  }
+                  disabled={toggleStatusMutation.isPending}
+                >
+                  {clinic.status === "active" ? "Bloquear" : "Desbloquear"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const pass = window.prompt(
+                      `Digite EXCLUIR para remover a clínica ${clinic.name}`,
+                    );
+                    if (pass !== "EXCLUIR") return;
+                    deleteMutation.mutate(clinic.id);
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  Excluir
                 </Button>
               </div>
             </div>
           ))}
           {(clinicsQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma clínica cadastrada.</p>
+          ) : null}
+          </Button>
+        </div>
             <p className="text-sm text-muted-foreground">Nenhuma clínica cadastrada.</p>
           ) : null}
         </div>

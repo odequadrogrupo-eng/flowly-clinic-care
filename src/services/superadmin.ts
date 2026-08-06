@@ -102,3 +102,44 @@ export async function upsertClinicBySuperadmin(input: SuperadminClinicInput, cli
 
   return result.clinicId;
 }
+
+export async function toggleClinicStatusBySuperadmin(
+  clinicId: string,
+  nextStatus: "active" | "inactive",
+  reason?: string,
+) {
+  const payload =
+    nextStatus === "inactive"
+      ? {
+          status: "inactive",
+          blocked_at: new Date().toISOString(),
+          blocked_reason: reason?.trim() || "Bloqueio administrativo",
+        }
+      : {
+          status: "active",
+          blocked_at: null,
+          blocked_reason: null,
+        };
+
+  const { error } = await supabase.from("clinics").update(payload).eq("id", clinicId);
+  if (error) throw error;
+}
+
+export async function deleteClinicBySuperadmin(clinicId: string) {
+  const { error } = await supabase.from("clinics").delete().eq("id", clinicId);
+  if (error) throw error;
+}
+
+export async function switchSuperadminClinicContext(clinicId: string) {
+  const userRes = await supabase.auth.getUser();
+  const userId = userRes.data.user?.id;
+  if (!userId) throw new Error("Usuário não autenticado.");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ clinic_id: clinicId })
+    .eq("id", userId)
+    .eq("role", "superadmin");
+
+  if (error) throw error;
+}

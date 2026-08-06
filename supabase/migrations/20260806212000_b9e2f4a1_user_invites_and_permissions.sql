@@ -40,7 +40,7 @@ FOR INSERT TO authenticated
 WITH CHECK (
   clinic_id = public.current_clinic_id()
   AND public.has_role(auth.uid(), 'admin')
-  AND role IN ('receptionist', 'professional', 'public_display')
+  AND role IN ('admin', 'receptionist', 'attendant', 'professional', 'public_display')
   AND created_by = auth.uid()
 );
 
