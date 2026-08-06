@@ -86,9 +86,9 @@ function PublicPanelPage() {
       <header className="text-center">
         <div className="mb-3 flex justify-center">
           <ClinicLogo
-            src={clinicQuery.data?.logo_url ?? "/brands/club-medico/logo.png"}
-            alt={clinicQuery.data?.name ?? "Club Médico"}
-            fallbackText="Club Médico"
+            src={clinicQuery.data?.logo_url ?? null}
+            alt={clinicQuery.data?.name ?? "ClinicFlow"}
+            fallbackText={clinicQuery.data?.name ?? "ClinicFlow"}
             className="h-16 w-44 border-primary-foreground/30 bg-white"
             imgClassName="h-12"
           />
