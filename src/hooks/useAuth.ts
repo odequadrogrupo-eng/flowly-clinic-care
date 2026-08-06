@@ -49,10 +49,11 @@ export function useAuthSync() {
 export const roleLabels: Record<AppRole, string> = {
   admin: "Administrador",
   receptionist: "Recepcionista",
+  attendant: "Atendente",
   professional: "Profissional",
   public_display: "Painel público",
 };
 
 export function canManage(role?: AppRole | null) {
-  return role === "admin" || role === "receptionist";
+  return role === "admin" || role === "receptionist" || role === "attendant";
 }

@@ -2,12 +2,19 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
+  CalendarClock,
   ListOrdered,
+  Bell,
   UserPlus,
   Users,
   Stethoscope,
   DoorOpen,
   MonitorPlay,
+  Printer,
+  FileBarChart,
+  Settings,
+  Shield,
+  ConciergeBell,
   ClipboardList,
   LogOut,
   Menu,
@@ -17,29 +24,110 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { supabase } from "@/integrations/supabase/client";
+import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { canManage, roleLabels, type AppRole } from "@/hooks/useAuth";
+import { signOutCurrentUser } from "@/services/auth";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof Users; roles: AppRole[] };
 
 const navItems: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "receptionist", "professional"] },
-  { to: "/fila", label: "Fila de atendimento", icon: ListOrdered, roles: ["admin", "receptionist"] },
-  { to: "/checkin", label: "Check-in", icon: UserPlus, roles: ["admin", "receptionist"] },
-  { to: "/atendimento", label: "Meu atendimento", icon: ClipboardList, roles: ["admin", "professional"] },
-  { to: "/pacientes", label: "Pacientes", icon: Users, roles: ["admin", "receptionist"] },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/fila",
+    label: "Fila de atendimento",
+    icon: ListOrdered,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/checkin",
+    label: "Check-in",
+    icon: UserPlus,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/recepcao",
+    label: "Recepção",
+    icon: ConciergeBell,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/agenda",
+    label: "Agenda",
+    icon: CalendarClock,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/chamada",
+    label: "Chamadas",
+    icon: Bell,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/atendimento",
+    label: "Meu atendimento",
+    icon: ClipboardList,
+    roles: ["admin", "professional"],
+  },
+  {
+    to: "/pacientes",
+    label: "Pacientes",
+    icon: Users,
+    roles: ["admin", "receptionist", "attendant"],
+  },
   { to: "/profissionais", label: "Profissionais", icon: Stethoscope, roles: ["admin"] },
   { to: "/salas", label: "Salas", icon: DoorOpen, roles: ["admin"] },
-  { to: "/painel", label: "Painel de chamada", icon: MonitorPlay, roles: ["admin", "receptionist", "professional", "public_display"] },
+  {
+    to: "/relatorios",
+    label: "Relatórios",
+    icon: FileBarChart,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  { to: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
+  {
+    to: "/impressao",
+    label: "Impressão",
+    icon: Printer,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  { to: "/auditoria", label: "Auditoria/LGPD", icon: Shield, roles: ["admin"] },
+  {
+    to: "/painel",
+    label: "Painel de chamada",
+    icon: MonitorPlay,
+    roles: ["admin", "receptionist", "attendant", "professional", "public_display"],
+  },
 ];
 
-export function Brand({ className }: { className?: string }) {
+export function Brand({
+  className,
+  logoSrc,
+  fallbackText,
+}: {
+  className?: string;
+  logoSrc?: string | null | undefined;
+  fallbackText?: string;
+}) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-        <Activity className="size-5" />
-      </span>
+      {logoSrc ? (
+        <ClinicLogo
+          src={logoSrc}
+          alt={fallbackText ?? "Clinica"}
+          fallbackText={fallbackText ?? "Clinica"}
+          className="h-11 w-20"
+          imgClassName="h-9"
+        />
+      ) : (
+        <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <Activity className="size-5" />
+        </span>
+      )}
       <span className="text-lg font-bold tracking-tight">ClinicFlow</span>
     </div>
   );
@@ -81,6 +169,7 @@ export function AppShell({
   actions,
   role,
   clinicName,
+  clinicLogoUrl,
   userName,
 }: {
   children: ReactNode;
@@ -89,6 +178,7 @@ export function AppShell({
   actions?: ReactNode | undefined;
   role: AppRole;
   clinicName: string;
+  clinicLogoUrl?: string | null;
   userName: string;
 }) {
   const navigate = useNavigate();
@@ -98,7 +188,7 @@ export function AppShell({
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await signOutCurrentUser();
     navigate({ to: "/auth", replace: true });
   }
 
@@ -119,7 +209,7 @@ export function AppShell({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-[268px] shrink-0 flex-col gap-6 border-r bg-sidebar p-4 lg:flex">
-        <Brand className="px-1 pt-2" />
+        <Brand className="px-1 pt-2" logoSrc={clinicLogoUrl} fallbackText={clinicName} />
         <NavList role={role} />
         {footer}
       </aside>
@@ -133,7 +223,7 @@ export function AppShell({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex w-[280px] flex-col gap-6 p-4">
-              <Brand className="px-1 pt-2" />
+              <Brand className="px-1 pt-2" logoSrc={clinicLogoUrl} fallbackText={clinicName} />
               <NavList role={role} onNavigate={() => setMobileOpen(false)} />
               {footer}
             </SheetContent>
@@ -142,7 +232,9 @@ export function AppShell({
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-semibold sm:text-lg">{title}</h1>
             {description ? (
-              <p className="hidden truncate text-sm text-muted-foreground sm:block">{description}</p>
+              <p className="hidden truncate text-sm text-muted-foreground sm:block">
+                {description}
+              </p>
             ) : null}
           </div>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
@@ -154,7 +246,15 @@ export function AppShell({
   );
 }
 
-export function RoleGate({ role, allowed, children }: { role: AppRole; allowed: AppRole[]; children: ReactNode }) {
+export function RoleGate({
+  role,
+  allowed,
+  children,
+}: {
+  role: AppRole;
+  allowed: AppRole[];
+  children: ReactNode;
+}) {
   if (!allowed.includes(role)) {
     return (
       <div className="card-soft p-8 text-center">

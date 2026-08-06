@@ -14,11 +14,18 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+ClinicFlow-Release
 *.local
 
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+
+# Environment files
+.env
+.env.*
+.env.local
+!.env.example
 
 # Editor directories and files
 .vscode/*

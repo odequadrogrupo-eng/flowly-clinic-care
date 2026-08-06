@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ErrorState, LoadingState } from "@/components/common/States";
@@ -17,16 +17,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 import { logAudit, type Patient, type Professional, type Room } from "@/lib/queue";
+import {
+  createPatientForCheckin,
+  createQueueCheckin,
+  listCheckinProfessionals,
+  listCheckinRooms,
+  listPatientDayAppointments,
+  searchPatientsForCheckin,
+} from "@/services/checkin";
 
 export const Route = createFileRoute("/_authenticated/checkin")({
   head: () => ({
     meta: [
       { title: "Check-in de paciente — ClinicFlow" },
-      { name: "description", content: "Registre a chegada do paciente e coloque-o na fila de atendimento." },
+      {
+        name: "description",
+        content: "Registre a chegada do paciente e coloque-o na fila de atendimento.",
+      },
       { property: "og:title", content: "Check-in de paciente — ClinicFlow" },
-      { property: "og:description", content: "Entrada de pacientes na fila de atendimento da clínica." },
+      {
+        property: "og:description",
+        content: "Entrada de pacientes na fila de atendimento da clínica.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -35,7 +48,11 @@ export const Route = createFileRoute("/_authenticated/checkin")({
 
 function CheckinPage() {
   return (
-    <Page title="Check-in de paciente" description="Busque o paciente e confirme a entrada na fila" allowed={["admin", "receptionist"]}>
+    <Page
+      title="Check-in de paciente"
+      description="Busque o paciente e confirme a entrada na fila"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => <CheckinContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -58,53 +75,62 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const patientsQuery = useQuery({
     queryKey: ["patients-search", clinicId, term],
-    queryFn: async () => {
-      const query = supabase.from("patients").select("*").eq("active", true).limit(15).order("full_name");
-      const trimmed = term.trim();
-      const { data, error } = trimmed
-        ? await query.or(`full_name.ilike.%${trimmed}%,cpf.ilike.%${trimmed}%,phone.ilike.%${trimmed}%`)
-        : await query;
-      if (error) throw error;
-      return (data ?? []) as Patient[];
-    },
+    queryFn: () => searchPatientsForCheckin(clinicId, term),
   });
 
   const professionalsQuery = useQuery({
     queryKey: ["professionals", clinicId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("professionals").select("*").eq("active", true).order("full_name");
-      if (error) throw error;
-      return (data ?? []) as Professional[];
-    },
+    queryFn: () => listCheckinProfessionals(clinicId),
   });
 
   const roomsQuery = useQuery({
     queryKey: ["rooms", clinicId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("rooms").select("*").eq("active", true).order("name");
-      if (error) throw error;
-      return (data ?? []) as Room[];
-    },
+    queryFn: () => listCheckinRooms(clinicId),
   });
+
+  const appointmentsQuery = useQuery({
+    queryKey: ["patient-day-appointments", clinicId, selected?.id ?? "none", today],
+    enabled: Boolean(selected?.id),
+    queryFn: () => listPatientDayAppointments(clinicId, selected!.id, today),
+  });
+
+  useEffect(() => {
+    const first = appointmentsQuery.data?.[0];
+    if (!first) return;
+
+    if (professionalId === NONE && first.professionals?.full_name) {
+      const professional = (professionalsQuery.data ?? []).find(
+        (item) => item.full_name === first.professionals?.full_name,
+      );
+      if (professional) setProfessionalId(professional.id);
+    }
+
+    if (roomId === NONE && first.rooms?.name) {
+      const room = (roomsQuery.data ?? []).find((item) => item.name === first.rooms?.name);
+      if (room) setRoomId(room.id);
+    }
+
+    if (!specialty.trim() && first.professionals?.specialty) {
+      setSpecialty(first.professionals.specialty);
+    }
+  }, [
+    appointmentsQuery.data,
+    professionalId,
+    professionalsQuery.data,
+    roomId,
+    roomsQuery.data,
+    specialty,
+  ]);
 
   const createPatient = useMutation({
     mutationFn: async () => {
-      if (newPatient.full_name.trim().length < 3) throw new Error("Informe o nome completo do paciente.");
-      const { data, error } = await supabase
-        .from("patients")
-        .insert({
-          clinic_id: clinicId,
-          full_name: newPatient.full_name.trim(),
-          cpf: newPatient.cpf.trim() || null,
-          phone: newPatient.phone.trim() || null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      await logAudit({ clinicId, action: "create", entity: "patients", entityId: data.id });
-      return data as Patient;
+      const patient = await createPatientForCheckin(clinicId, newPatient);
+      await logAudit({ clinicId, action: "create", entity: "patients", entityId: patient.id });
+      return patient;
     },
     onSuccess: (patient) => {
       toast.success("Paciente cadastrado");
@@ -123,25 +149,17 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
       const professional =
         professionalId === NONE
           ? null
-          : (professionalsQuery.data ?? []).find((item) => item.id === professionalId) ?? null;
-      const resolvedRoom = roomId === NONE ? professional?.room_id ?? null : roomId;
-      const { data, error } = await supabase
-        .from("queues")
-        .insert({
-          clinic_id: clinicId,
-          patient_id: selected.id,
-          professional_id: professional?.id ?? null,
-          room_id: resolvedRoom,
-          service_type: specialty.trim() || professional?.specialty || "Consulta",
-          priority: priority === "priority" ? "priority" : "normal",
-          status: "waiting",
-          position: Date.now(),
-          notes: notes.trim() || null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      await logAudit({ clinicId, action: "checkin", entity: "queues", entityId: data.id });
+          : ((professionalsQuery.data ?? []).find((item) => item.id === professionalId) ?? null);
+      const resolvedRoom = roomId === NONE ? (professional?.room_id ?? null) : roomId;
+      const queueId = await createQueueCheckin(clinicId, {
+        patientId: selected.id,
+        professionalId: professional?.id ?? null,
+        roomId: resolvedRoom,
+        serviceType: specialty.trim() || professional?.specialty || "Consulta",
+        priority: priority === "priority" ? "priority" : "normal",
+        notes,
+      });
+      await logAudit({ clinicId, action: "checkin", entity: "queues", entityId: queueId });
     },
     onSuccess: () => {
       toast.success("Paciente na fila", { description: "Check-in registrado com data e hora." });
@@ -197,7 +215,8 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
                 >
                   <p className="font-medium">{patient.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {patient.cpf ? `CPF ${patient.cpf}` : "Sem CPF"} · {patient.phone ?? "Sem telefone"}
+                    {patient.cpf ? `CPF ${patient.cpf}` : "Sem CPF"} ·{" "}
+                    {patient.phone ?? "Sem telefone"}
                   </p>
                 </button>
               ))
@@ -212,7 +231,9 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
               <Input
                 id="np-name"
                 value={newPatient.full_name}
-                onChange={(event) => setNewPatient({ ...newPatient, full_name: event.target.value })}
+                onChange={(event) =>
+                  setNewPatient({ ...newPatient, full_name: event.target.value })
+                }
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -234,7 +255,11 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => createPatient.mutate()} disabled={createPatient.isPending}>
+              <Button
+                size="sm"
+                onClick={() => createPatient.mutate()}
+                disabled={createPatient.isPending}
+              >
                 Salvar paciente
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
@@ -252,8 +277,29 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
       <div className="card-soft space-y-4 p-5">
         <div>
           <h2 className="font-semibold">2. Atendimento</h2>
-          <p className="text-sm text-muted-foreground">Data e horário de chegada são registrados automaticamente.</p>
+          <p className="text-sm text-muted-foreground">
+            Data e horário de chegada são registrados automaticamente.
+          </p>
         </div>
+
+        {(appointmentsQuery.data ?? []).length > 0 ? (
+          <div className="rounded-xl border bg-primary/5 p-3 text-sm">
+            <p className="font-medium">Sugestão da agenda de hoje</p>
+            <p className="text-muted-foreground">
+              {new Date((appointmentsQuery.data ?? [])[0]!.scheduled_for).toLocaleTimeString(
+                "pt-BR",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}
+              {" · "}
+              {(appointmentsQuery.data ?? [])[0]!.professionals?.full_name ?? "Sem profissional"}
+              {" · "}
+              {(appointmentsQuery.data ?? [])[0]!.rooms?.name ?? "Sem sala"}
+            </p>
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="specialty">Especialidade / tipo de atendimento</Label>
@@ -316,12 +362,22 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
 
         <div className="space-y-2">
           <Label htmlFor="notes">Observações</Label>
-          <Textarea id="notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            rows={3}
+          />
         </div>
 
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 
-        <Button className="w-full" size="lg" disabled={!selected || checkin.isPending} onClick={() => checkin.mutate()}>
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!selected || checkin.isPending}
+          onClick={() => checkin.mutate()}
+        >
           {checkin.isPending ? "Registrando..." : "Confirmar entrada na fila"}
         </Button>
       </div>

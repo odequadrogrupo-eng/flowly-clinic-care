@@ -33,6 +33,7 @@ export function Page({
       actions={actions}
       role={profile.role}
       clinicName={profile.clinics?.name ?? "Clínica"}
+      clinicLogoUrl={profile.clinics?.logo_url ?? null}
       userName={profile.full_name || (profile.email ?? "Usuário")}
     >
       <RoleGate role={profile.role} allowed={allowed}>

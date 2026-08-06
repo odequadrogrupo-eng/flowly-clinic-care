@@ -6,7 +6,7 @@ import { Brand } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { clearTemporaryPasswordFlag, updateCurrentUserPassword } from "@/services/auth";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -31,19 +31,18 @@ function ResetPassword() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    if (password.length < 6) {
-      setError("A senha precisa ter pelo menos 6 caracteres.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("As senhas não conferem.");
-      return;
-    }
     setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    let handledError: string | null = null;
+    try {
+      await updateCurrentUserPassword({ password, confirmPassword: confirm });
+      await clearTemporaryPasswordFlag();
+    } catch (authError) {
+      handledError =
+        authError instanceof Error ? authError.message : "Nao foi possivel atualizar a senha.";
+    }
     setLoading(false);
-    if (updateError) {
-      setError(updateError.message);
+    if (handledError) {
+      setError(handledError);
       return;
     }
     toast.success("Senha atualizada");
@@ -57,15 +56,27 @@ function ResetPassword() {
         <form className="card-soft mt-6 space-y-4 p-6" onSubmit={handleSubmit}>
           <div>
             <h1 className="text-lg font-semibold">Definir nova senha</h1>
-            <p className="text-sm text-muted-foreground">Use o link recebido por e-mail para concluir.</p>
+            <p className="text-sm text-muted-foreground">
+              Use o link recebido por e-mail para concluir.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="newPassword">Nova senha</Label>
-            <Input id="newPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="newPassword"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar senha</Label>
-            <Input id="confirmPassword" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={loading}>

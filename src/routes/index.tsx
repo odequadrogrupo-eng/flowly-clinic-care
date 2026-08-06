@@ -16,7 +16,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "ClinicFlow — Gestão de atendimento em clínicas" },
       {
         property: "og:description",
-        content: "Check-in, fila em tempo real, painel de chamada e relatórios para clínicas e consultórios.",
+        content:
+          "Check-in, fila em tempo real, painel de chamada e relatórios para clínicas e consultórios.",
       },
     ],
   }),
@@ -24,9 +25,21 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: ListOrdered, title: "Fila em tempo real", text: "Chegada, prioridade e status atualizados instantaneamente para toda a equipe." },
-  { icon: MonitorPlay, title: "Painel de chamada", text: "Tela de televisão com chamada em destaque e voz automática, sem expor dados sensíveis." },
-  { icon: ShieldCheck, title: "Multiclínica seguro", text: "Cada clínica vê somente os próprios dados, com permissões por perfil." },
+  {
+    icon: ListOrdered,
+    title: "Fila em tempo real",
+    text: "Chegada, prioridade e status atualizados instantaneamente para toda a equipe.",
+  },
+  {
+    icon: MonitorPlay,
+    title: "Painel de chamada",
+    text: "Tela de televisão com chamada em destaque e voz automática, sem expor dados sensíveis.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Multiclínica seguro",
+    text: "Cada clínica vê somente os próprios dados, com permissões por perfil.",
+  },
 ];
 
 function Landing() {
@@ -49,8 +62,8 @@ function Landing() {
               A fila da sua clínica, sob controle em tempo real.
             </h2>
             <p className="mt-4 max-w-lg text-muted-foreground">
-              Do check-in na recepção à chamada na sala de espera: ClinicFlow conecta recepção, profissionais e
-              pacientes em um único fluxo claro.
+              Do check-in na recepção à chamada na sala de espera: ClinicFlow conecta recepção,
+              profissionais e pacientes em um único fluxo claro.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -63,26 +76,30 @@ function Landing() {
           </div>
 
           <div className="card-soft space-y-3 p-6">
-            {["Ana C. · Cardiologia · Preferencial", "Bruno M. · Clínica geral", "Carla S. · Pediatria"].map(
-              (row, index) => (
-                <div
-                  key={row}
-                  className="flex items-center justify-between rounded-xl border bg-background px-4 py-3 text-sm"
+            {[
+              "Ana C. · Cardiologia · Preferencial",
+              "Bruno M. · Clínica geral",
+              "Carla S. · Pediatria",
+            ].map((row, index) => (
+              <div
+                key={row}
+                className="flex items-center justify-between rounded-xl border bg-background px-4 py-3 text-sm"
+              >
+                <span className="font-medium">{row}</span>
+                <span
+                  className={
+                    index === 0
+                      ? "rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
+                      : "rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground"
+                  }
                 >
-                  <span className="font-medium">{row}</span>
-                  <span
-                    className={
-                      index === 0
-                        ? "rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-                        : "rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground"
-                    }
-                  >
-                    {index === 0 ? "Chamando" : "Aguardando"}
-                  </span>
-                </div>
-              ),
-            )}
-            <p className="pt-2 text-xs text-muted-foreground">Exemplo ilustrativo da fila de atendimento.</p>
+                  {index === 0 ? "Chamando" : "Aguardando"}
+                </span>
+              </div>
+            ))}
+            <p className="pt-2 text-xs text-muted-foreground">
+              Exemplo ilustrativo da fila de atendimento.
+            </p>
           </div>
         </section>
 
