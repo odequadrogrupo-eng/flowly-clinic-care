@@ -523,12 +523,7 @@ export type Database = {
     };
     Enums: {
       app_role:
-        | "superadmin"
-        | "admin"
-        | "receptionist"
-        | "attendant"
-        | "professional"
-        | "public_display";
+        "superadmin" | "admin" | "receptionist" | "attendant" | "professional" | "public_display";
       professional_status: "available" | "busy" | "away";
       queue_priority: "normal" | "priority";
       queue_status:

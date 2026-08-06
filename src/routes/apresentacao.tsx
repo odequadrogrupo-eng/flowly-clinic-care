@@ -135,9 +135,13 @@ function CommercialPresentationPage() {
                   <article key={section.id} className="space-y-3">
                     <h2 className="text-2xl font-bold">{section.title}</h2>
                     <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-                      {section.bullets?.map((item) => <li key={item}>{item}</li>)}
+                      {section.bullets?.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
                     </ul>
-                    {section.highlight ? <p className="font-semibold">{section.highlight}</p> : null}
+                    {section.highlight ? (
+                      <p className="font-semibold">{section.highlight}</p>
+                    ) : null}
                   </article>
                 ))}
             </div>
@@ -168,7 +172,12 @@ function CommercialPresentationPage() {
             </div>
           ) : null}
 
-          {current === "totem" || current === "recepcao" || current === "atendimento" || current === "painel" || current === "gestao" || current === "multiempresa" ? (
+          {current === "totem" ||
+          current === "recepcao" ||
+          current === "atendimento" ||
+          current === "painel" ||
+          current === "gestao" ||
+          current === "multiempresa" ? (
             <FocusModuleBlock section={current} />
           ) : null}
 

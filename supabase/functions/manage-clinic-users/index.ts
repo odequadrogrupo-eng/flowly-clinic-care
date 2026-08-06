@@ -210,10 +210,9 @@ Deno.serve(async (req) => {
         } as never);
       }
 
-      return new Response(
-        JSON.stringify({ ok: true, clinicId, adminUserId: userId }),
-        { headers: { ...corsHeaders, "content-type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ ok: true, clinicId, adminUserId: userId }), {
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
     }
 
     if (body.action === "create") {

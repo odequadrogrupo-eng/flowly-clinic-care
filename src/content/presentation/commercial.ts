@@ -95,14 +95,16 @@ export const moduleShowcases: ModuleShowcase[] = [
     name: "Atendimento médico",
     summary: "Controle da fila do profissional com início, transferência e finalização.",
     benefits: ["Rastreabilidade", "Menos chamadas manuais", "Produtividade clínica"],
-    practicalExample: "Médico inicia atendimento, transfere quando necessário e finaliza com histórico.",
+    practicalExample:
+      "Médico inicia atendimento, transfere quando necessário e finaliza com histórico.",
     expectedResult: "Consultórios com fluxo previsível.",
     image: "/presentation/atendimento.png",
   },
   {
     id: "painel",
     name: "Painel de TV + Voz",
-    summary: "Exibição pública de senha, guichê/sala e últimas chamadas com atualização em tempo real.",
+    summary:
+      "Exibição pública de senha, guichê/sala e últimas chamadas com atualização em tempo real.",
     benefits: ["Comunicação clara", "Privacidade configurável", "Menos ruído na recepção"],
     practicalExample: "Senha chamada aparece no painel e voz anuncia o destino automaticamente.",
     expectedResult: "Experiência melhor para paciente e equipe.",

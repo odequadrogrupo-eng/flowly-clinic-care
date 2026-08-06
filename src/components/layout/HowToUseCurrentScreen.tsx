@@ -4,13 +4,7 @@ import { useRouterState } from "@tanstack/react-router";
 import type { AppRole } from "@/hooks/useAuth";
 import { helpArticles, helpRouteMap } from "@/content/help/articles";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const hiddenPrefixes = ["/totem/", "/painel/"];
 

@@ -18,7 +18,14 @@ function HelpCenterPage() {
     <Page
       title="Central de Ajuda e Guias de Uso"
       description="Guias práticos por módulo, perfil e fluxo operacional."
-      allowed={["superadmin", "admin", "receptionist", "attendant", "professional", "public_display"]}
+      allowed={[
+        "superadmin",
+        "admin",
+        "receptionist",
+        "attendant",
+        "professional",
+        "public_display",
+      ]}
     >
       {(profile) => <HelpCenterContent role={profile.role} />}
     </Page>
@@ -55,7 +62,9 @@ function HelpCenterContent({ role }: { role: HelpArticle["roles"][number] }) {
     filtered.find((article) => article.id === selectedArticleId) || filtered[0] || null;
 
   function toggleFavorite(id: string) {
-    setFavoriteIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+    setFavoriteIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
   }
 
   return (
@@ -110,7 +119,9 @@ function HelpCenterContent({ role }: { role: HelpArticle["roles"][number] }) {
 
       <section className="card-soft p-5">
         {!selected ? (
-          <p className="text-sm text-muted-foreground">Nenhum artigo disponível para este perfil.</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhum artigo disponível para este perfil.
+          </p>
         ) : (
           <article className="space-y-4">
             <header>

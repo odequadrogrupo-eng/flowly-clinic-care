@@ -11,17 +11,16 @@ const signInSchema = z.object({
   password: passwordSchema,
 });
 
-const signUpSchema = z
-  .object({
-    email: emailSchema,
-    password: passwordSchema,
-    fullName: nonEmptySchema,
-    clinicName: z.string().trim().optional(),
-    inviteToken: z.string().trim().optional(),
-    inviteRole: z
-      .enum(["admin", "receptionist", "attendant", "professional", "public_display", "superadmin"])
-      .optional(),
-  });
+const signUpSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  fullName: nonEmptySchema,
+  clinicName: z.string().trim().optional(),
+  inviteToken: z.string().trim().optional(),
+  inviteRole: z
+    .enum(["admin", "receptionist", "attendant", "professional", "public_display", "superadmin"])
+    .optional(),
+});
 
 const requestResetSchema = z.object({
   email: emailSchema,
@@ -70,12 +69,7 @@ export async function signUpWithClinic(input: {
   clinicSlug?: string;
   inviteToken?: string;
   inviteRole?:
-    | "admin"
-    | "receptionist"
-    | "attendant"
-    | "professional"
-    | "public_display"
-    | "superadmin";
+    "admin" | "receptionist" | "attendant" | "professional" | "public_display" | "superadmin";
 }) {
   const data = parseOrThrow(signUpSchema.safeParse(input));
   const metadata: Record<string, string> = {
