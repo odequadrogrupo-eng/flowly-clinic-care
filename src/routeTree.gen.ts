@@ -35,6 +35,7 @@ import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedSuperadminBackupRouteImport } from './routes/_authenticated/superadmin-backup'
 import { Route as AuthenticatedSuperadminClinicasRouteImport } from './routes/_authenticated/superadmin-clinicas'
+import { Route as AuthenticatedSuperadminIsolamentoRouteImport } from './routes/_authenticated/superadmin-isolamento'
 import { Route as AuthenticatedSuperadminMonitoramentoRouteImport } from './routes/_authenticated/superadmin-monitoramento'
 import { Route as AuthenticatedSuperadminOnboardingRouteImport } from './routes/_authenticated/superadmin-onboarding'
 import { Route as PainelTokenRouteImport } from './routes/painel/$token'
@@ -175,6 +176,12 @@ const AuthenticatedSuperadminClinicasRoute =
     path: '/superadmin-clinicas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSuperadminIsolamentoRoute =
+  AuthenticatedSuperadminIsolamentoRouteImport.update({
+    id: '/superadmin-isolamento',
+    path: '/superadmin-isolamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSuperadminMonitoramentoRoute =
   AuthenticatedSuperadminMonitoramentoRouteImport.update({
     id: '/superadmin-monitoramento',
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/superadmin-backup': typeof AuthenticatedSuperadminBackupRoute
   '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
+  '/superadmin-isolamento': typeof AuthenticatedSuperadminIsolamentoRoute
   '/superadmin-monitoramento': typeof AuthenticatedSuperadminMonitoramentoRoute
   '/superadmin-onboarding': typeof AuthenticatedSuperadminOnboardingRoute
   '/painel/$token': typeof PainelTokenRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/superadmin-backup': typeof AuthenticatedSuperadminBackupRoute
   '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
+  '/superadmin-isolamento': typeof AuthenticatedSuperadminIsolamentoRoute
   '/superadmin-monitoramento': typeof AuthenticatedSuperadminMonitoramentoRoute
   '/superadmin-onboarding': typeof AuthenticatedSuperadminOnboardingRoute
   '/painel/$token': typeof PainelTokenRoute
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
   '/_authenticated/superadmin-backup': typeof AuthenticatedSuperadminBackupRoute
   '/_authenticated/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
+  '/_authenticated/superadmin-isolamento': typeof AuthenticatedSuperadminIsolamentoRoute
   '/_authenticated/superadmin-monitoramento': typeof AuthenticatedSuperadminMonitoramentoRoute
   '/_authenticated/superadmin-onboarding': typeof AuthenticatedSuperadminOnboardingRoute
   '/painel/$token': typeof PainelTokenRoute
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/superadmin-backup'
     | '/superadmin-clinicas'
+    | '/superadmin-isolamento'
     | '/superadmin-monitoramento'
     | '/superadmin-onboarding'
     | '/painel/$token'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/superadmin-backup'
     | '/superadmin-clinicas'
+    | '/superadmin-isolamento'
     | '/superadmin-monitoramento'
     | '/superadmin-onboarding'
     | '/painel/$token'
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/_authenticated/superadmin'
     | '/_authenticated/superadmin-backup'
     | '/_authenticated/superadmin-clinicas'
+    | '/_authenticated/superadmin-isolamento'
     | '/_authenticated/superadmin-monitoramento'
     | '/_authenticated/superadmin-onboarding'
     | '/painel/$token'
@@ -585,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperadminClinicasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/superadmin-isolamento': {
+      id: '/_authenticated/superadmin-isolamento'
+      path: '/superadmin-isolamento'
+      fullPath: '/superadmin-isolamento'
+      preLoaderRoute: typeof AuthenticatedSuperadminIsolamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/superadmin-monitoramento': {
       id: '/_authenticated/superadmin-monitoramento'
       path: '/superadmin-monitoramento'
@@ -636,6 +656,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSuperadminRoute: typeof AuthenticatedSuperadminRoute
   AuthenticatedSuperadminBackupRoute: typeof AuthenticatedSuperadminBackupRoute
   AuthenticatedSuperadminClinicasRoute: typeof AuthenticatedSuperadminClinicasRoute
+  AuthenticatedSuperadminIsolamentoRoute: typeof AuthenticatedSuperadminIsolamentoRoute
   AuthenticatedSuperadminMonitoramentoRoute: typeof AuthenticatedSuperadminMonitoramentoRoute
   AuthenticatedSuperadminOnboardingRoute: typeof AuthenticatedSuperadminOnboardingRoute
 }
@@ -660,6 +681,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSuperadminRoute: AuthenticatedSuperadminRoute,
   AuthenticatedSuperadminBackupRoute: AuthenticatedSuperadminBackupRoute,
   AuthenticatedSuperadminClinicasRoute: AuthenticatedSuperadminClinicasRoute,
+  AuthenticatedSuperadminIsolamentoRoute:
+    AuthenticatedSuperadminIsolamentoRoute,
   AuthenticatedSuperadminMonitoramentoRoute:
     AuthenticatedSuperadminMonitoramentoRoute,
   AuthenticatedSuperadminOnboardingRoute:
