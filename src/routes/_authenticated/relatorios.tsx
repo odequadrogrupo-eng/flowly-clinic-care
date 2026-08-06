@@ -1,0 +1,123 @@
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Activity, Clock, Users } from "lucide-react";
+import { useState } from "react";
+
+import { EmptyState, ErrorState, LoadingState, StatCard } from "@/components/common/States";
+import { Page } from "@/components/layout/Page";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getOperationalReport } from "@/services/reports";
+
+export const Route = createFileRoute("/_authenticated/relatorios")({
+  head: () => ({
+    meta: [
+      { title: "Relatórios — ClinicFlow" },
+      { name: "description", content: "Indicadores operacionais de check-in, espera e conclusão de atendimentos." },
+      { property: "og:title", content: "Relatórios — ClinicFlow" },
+      { property: "og:description", content: "Acompanhe os principais indicadores de atendimento da clínica." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: ReportsPage,
+});
+
+function isoToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+function ReportsPage() {
+  return (
+    <Page title="Relatórios" description="Indicadores operacionais" allowed={["admin", "receptionist", "attendant"]}>
+      {(profile) => <ReportsContent clinicId={profile.clinic_id} />}
+    </Page>
+  );
+}
+
+function ReportsContent({ clinicId }: { clinicId: string }) {
+  const [fromDate, setFromDate] = useState(daysAgo(6));
+  const [toDate, setToDate] = useState(isoToday());
+
+  const reportQuery = useQuery({
+    queryKey: ["operational-report", clinicId, fromDate, toDate],
+    queryFn: () =>
+      getOperationalReport(
+        clinicId,
+        new Date(`${fromDate}T00:00:00`).toISOString(),
+        new Date(`${toDate}T23:59:59`).toISOString(),
+      ),
+  });
+
+  if (reportQuery.isLoading) return <LoadingState label="Gerando relatório..." />;
+  if (reportQuery.error) return <ErrorState error={reportQuery.error} />;
+
+  const report = reportQuery.data;
+  if (!report) {
+    return (
+      <div className="card-soft">
+        <EmptyState title="Sem dados" description="Não há dados suficientes para o período selecionado." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 rounded-2xl border p-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="report-from">De</Label>
+          <Input id="report-from" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="report-to">Até</Label>
+          <Input id="report-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+        </div>
+      </div>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Check-ins" value={report.totalCheckins} icon={<Users className="size-5" />} />
+        <StatCard label="Finalizados" value={report.totalFinished} icon={<Activity className="size-5" />} />
+        <StatCard label="Cancelados/No-show" value={report.totalCancelled} icon={<Clock className="size-5" />} />
+        <StatCard label="Espera média" value={`${report.avgWaitMinutes} min`} icon={<Clock className="size-5" />} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="card-soft p-5">
+          <h2 className="font-semibold">Atendimentos por status</h2>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={report.byStatus}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="status" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card-soft p-5">
+          <h2 className="font-semibold">Top profissionais por volume</h2>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={report.byProfessional}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="professional" interval={0} angle={-15} height={60} textAnchor="end" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
