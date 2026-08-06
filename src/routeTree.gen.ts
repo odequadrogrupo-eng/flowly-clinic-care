@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAtendimentoRouteImport } from './routes/_authenticated/atendimento'
 import { Route as AuthenticatedCheckinRouteImport } from './routes/_authenticated/checkin'
@@ -33,6 +34,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -81,6 +87,7 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
   '/reset-password': typeof ResetPasswordRoute
   '/atendimento': typeof AuthenticatedAtendimentoRoute
   '/checkin': typeof AuthenticatedCheckinRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
   '/reset-password': typeof ResetPasswordRoute
   '/atendimento': typeof AuthenticatedAtendimentoRoute
   '/checkin': typeof AuthenticatedCheckinRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/atendimento': typeof AuthenticatedAtendimentoRoute
   '/_authenticated/checkin': typeof AuthenticatedCheckinRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/painel'
     | '/reset-password'
     | '/atendimento'
     | '/checkin'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/painel'
     | '/reset-password'
     | '/atendimento'
     | '/checkin'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/painel'
     | '/reset-password'
     | '/_authenticated/atendimento'
     | '/_authenticated/checkin'
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PainelRoute: typeof PainelRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -272,6 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PainelRoute: PainelRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
