@@ -30,7 +30,7 @@ function isoDateToday() {
 
 function CallsPage() {
   return (
-    <Page title="Central de chamadas" description="Histórico e repetição de chamadas" allowed={["admin", "receptionist", "professional"]}>
+    <Page title="Central de chamadas" description="Histórico e repetição de chamadas" allowed={["admin", "receptionist", "attendant", "professional"]}>
       {(profile) => <CallsContent clinicId={profile.clinic_id} />}
     </Page>
   );

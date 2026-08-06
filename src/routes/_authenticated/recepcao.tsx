@@ -165,8 +165,25 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
                   <p className="text-xs text-muted-foreground">{ticket.priority ? "Preferencial" : "Normal"} · {ticket.status}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => callMutation.mutate(ticket)}>Chamar</Button>
-                  <Button size="sm" variant="outline" onClick={() => callMutation.mutate(ticket)}>Repetir</Button>
+                  {(ticket.status === "called_reception" || ticket.status === "called_service") ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => callMutation.mutate(ticket)}
+                      disabled={callMutation.isPending}
+                    >
+                      Repetir
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => callMutation.mutate(ticket)}
+                      disabled={callMutation.isPending}
+                    >
+                      Chamar
+                    </Button>
+                  )}
                   <Button size="sm" onClick={() => setSelectedTicket(ticket)}>Triar</Button>
                   <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(ticket)}>Cancelar</Button>
                 </div>
