@@ -44,6 +44,25 @@ export const statusTone: Record<QueueStatus, string> = {
   no_show: "bg-muted text-muted-foreground",
 };
 
+function queueStatusToTicketStatus(status: QueueStatus):
+  | "waiting_reception"
+  | "called_reception"
+  | "waiting_service"
+  | "called_service"
+  | "in_service"
+  | "finished"
+  | "cancelled"
+  | "no_show" {
+  if (status === "waiting_reception") return "waiting_reception";
+  if (status === "called_reception") return "called_reception";
+  if (status === "waiting_service" || status === "waiting") return "waiting_service";
+  if (status === "called_service" || status === "called") return "called_service";
+  if (status === "in_service") return "in_service";
+  if (status === "finished") return "finished";
+  if (status === "cancelled") return "cancelled";
+  return "no_show";
+}
+
 export async function logAudit(input: {
   clinicId: string;
   action: string;
@@ -88,6 +107,12 @@ export async function callQueueItem(item: QueueItem, clinicId: string) {
     .eq("id", item.id);
   if (error) throw error;
 
+  await supabase
+    .from("tickets" as never)
+    .update({ status: queueStatusToTicketStatus(nextStatus), called_at: now } as never)
+    .eq("clinic_id", clinicId)
+    .eq("queue_id", item.id);
+
   const { error: callError } = await supabase.from("calls").insert({
     clinic_id: clinicId,
     queue_id: item.id,
@@ -119,6 +144,23 @@ export async function updateQueueStatus(
   if (status === "cancelled") patch.cancelled_at = now;
   const { error } = await supabase.from("queues").update(patch).eq("id", item.id);
   if (error) throw error;
+
+  const ticketPatch: Record<string, unknown> = {
+    status: queueStatusToTicketStatus(status),
+  };
+  if (status === "called" || status === "called_reception" || status === "called_service") {
+    ticketPatch["called_at"] = patch.called_at ?? now;
+  }
+  if (status === "cancelled") {
+    ticketPatch["cancelled_at"] = now;
+  }
+
+  await supabase
+    .from("tickets" as never)
+    .update(ticketPatch as never)
+    .eq("clinic_id", clinicId)
+    .eq("queue_id", item.id);
+
   await logAudit({ clinicId, action: `queue_${status}`, entity: "queues", entityId: item.id });
 }
 

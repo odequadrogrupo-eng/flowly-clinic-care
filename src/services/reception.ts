@@ -80,28 +80,61 @@ export async function sendTicketToService(clinicId: string, input: {
   serviceType?: string | null;
   notes?: string | null;
 }) {
-  const { data: queueRow, error: queueError } = await supabase
-    .from("queues")
-    .insert({
-      clinic_id: clinicId,
-      patient_id: input.patientId,
-      professional_id: input.professionalId ?? null,
-      room_id: input.roomId ?? null,
-      service_type: input.serviceType ?? "Consulta",
-      status: "waiting_service",
-      priority: "normal",
-      position: Date.now(),
-      notes: input.notes ?? null,
-    })
-    .select("id")
+  const { data: ticketRow, error: ticketReadError } = await supabase
+    .from("tickets" as never)
+    .select("queue_id, priority" as never)
+    .eq("clinic_id", clinicId)
+    .eq("id", input.ticketId)
     .single();
 
-  if (queueError) throw queueError;
+  if (ticketReadError) throw ticketReadError;
+
+  const existingQueueId = (ticketRow as { queue_id: string | null } | null)?.queue_id ?? null;
+  const ticketPriority = (ticketRow as { priority: boolean } | null)?.priority ? "priority" : "normal";
+
+  let queueId = existingQueueId;
+
+  if (queueId) {
+    const { error: queueUpdateError } = await supabase
+      .from("queues")
+      .update({
+        patient_id: input.patientId,
+        professional_id: input.professionalId ?? null,
+        room_id: input.roomId ?? null,
+        service_type: input.serviceType ?? "Consulta",
+        status: "waiting_service",
+        priority: ticketPriority,
+        notes: input.notes ?? null,
+        started_at: null,
+      })
+      .eq("clinic_id", clinicId)
+      .eq("id", queueId);
+    if (queueUpdateError) throw queueUpdateError;
+  } else {
+    const { data: queueRow, error: queueCreateError } = await supabase
+      .from("queues")
+      .insert({
+        clinic_id: clinicId,
+        patient_id: input.patientId,
+        professional_id: input.professionalId ?? null,
+        room_id: input.roomId ?? null,
+        service_type: input.serviceType ?? "Consulta",
+        status: "waiting_service",
+        priority: ticketPriority,
+        position: Date.now(),
+        notes: input.notes ?? null,
+      })
+      .select("id")
+      .single();
+
+    if (queueCreateError) throw queueCreateError;
+    queueId = queueRow.id as string;
+  }
 
   const { error: ticketError } = await supabase
     .from("tickets" as never)
     .update({
-      queue_id: queueRow.id,
+      queue_id: queueId,
       patient_id: input.patientId,
       status: "waiting_service",
     } as never)
@@ -110,7 +143,36 @@ export async function sendTicketToService(clinicId: string, input: {
 
   if (ticketError) throw ticketError;
 
-  return queueRow.id as string;
+  return queueId as string;
+}
+
+export async function returnTicketToReception(clinicId: string, ticketId: string, queueId: string) {
+  const { error: queueError } = await supabase
+    .from("queues")
+    .update({
+      status: "waiting_reception",
+      professional_id: null,
+      room_id: null,
+      started_at: null,
+      called_at: null,
+      position: Date.now(),
+    })
+    .eq("clinic_id", clinicId)
+    .eq("id", queueId);
+
+  if (queueError) throw queueError;
+
+  const { error: ticketError } = await supabase
+    .from("tickets" as never)
+    .update({
+      status: "waiting_reception",
+      called_at: null,
+      cancelled_at: null,
+    } as never)
+    .eq("clinic_id", clinicId)
+    .eq("id", ticketId);
+
+  if (ticketError) throw ticketError;
 }
 
 export async function cancelTicket(clinicId: string, ticketId: string) {

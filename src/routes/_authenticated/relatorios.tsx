@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState, StatCard } from "@/components/common/States";
 import { Page } from "@/components/layout/Page";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getOperationalReport } from "@/services/reports";
@@ -31,6 +32,52 @@ function daysAgo(days: number) {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return date.toISOString().slice(0, 10);
+}
+
+function toCsv(report: {
+  totalCheckins: number;
+  totalFinished: number;
+  totalCancelled: number;
+  avgWaitMinutes: number;
+  byStatus: Array<{ status: string; total: number }>;
+  byProfessional: Array<{ professional: string; total: number }>;
+}) {
+  const rows: string[][] = [
+    ["Metrica", "Valor"],
+    ["Checkins", String(report.totalCheckins)],
+    ["Finalizados", String(report.totalFinished)],
+    ["Cancelados_no_show", String(report.totalCancelled)],
+    ["Espera_media_min", String(report.avgWaitMinutes)],
+    [],
+    ["Status", "Total"],
+    ...report.byStatus.map((item) => [item.status, String(item.total)]),
+    [],
+    ["Profissional", "Total"],
+    ...report.byProfessional.map((item) => [item.professional, String(item.total)]),
+  ];
+
+  return rows
+    .map((cols) =>
+      cols
+        .map((value) => {
+          const escaped = value.replaceAll('"', '""');
+          return /[",\n;]/.test(escaped) ? `"${escaped}"` : escaped;
+        })
+        .join(";"),
+    )
+    .join("\n");
+}
+
+function downloadCsv(fileName: string, content: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 function ReportsPage() {
@@ -77,6 +124,14 @@ function ReportsContent({ clinicId }: { clinicId: string }) {
         <div className="space-y-2">
           <Label htmlFor="report-to">Até</Label>
           <Input id="report-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+        </div>
+        <div className="md:col-span-2">
+          <Button
+            variant="outline"
+            onClick={() => downloadCsv(`relatorio-operacional-${fromDate}_a_${toDate}.csv`, toCsv(report))}
+          >
+            Exportar CSV
+          </Button>
         </div>
       </div>
 

@@ -32,6 +32,9 @@ import {
   type Professional,
   type QueueItem,
 } from "@/lib/queue";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { listCheckinProfessionals, listCheckinRooms } from "@/services/checkin";
 import { useActiveQueue } from "./fila";
 
 export const Route = createFileRoute("/_authenticated/atendimento")({
@@ -59,6 +62,9 @@ function ProfessionalContent({ clinicId, profileId }: { clinicId: string; profil
   const queryClient = useQueryClient();
   const [internalNotes, setInternalNotes] = useState("");
   const [confirmFinish, setConfirmFinish] = useState<QueueItem | null>(null);
+  const [transferProfessionalId, setTransferProfessionalId] = useState("__none__");
+  const [transferRoomId, setTransferRoomId] = useState("__none__");
+  const [transferNotes, setTransferNotes] = useState("");
 
   const professionalQuery = useQuery({
     queryKey: ["my-professional", profileId],
@@ -75,6 +81,16 @@ function ProfessionalContent({ clinicId, profileId }: { clinicId: string; profil
 
   const professionalId = professionalQuery.data?.id;
   const queueQuery = useActiveQueue(clinicId, professionalId);
+
+  const professionalsQuery = useQuery({
+    queryKey: ["transfer-professionals", clinicId],
+    queryFn: () => listCheckinProfessionals(clinicId),
+  });
+
+  const roomsQuery = useQuery({
+    queryKey: ["transfer-rooms", clinicId],
+    queryFn: () => listCheckinRooms(clinicId),
+  });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["queue"] });
 
@@ -111,8 +127,59 @@ function ProfessionalContent({ clinicId, profileId }: { clinicId: string; profil
     onError: (error: Error) => toast.error("Erro", { description: error.message }),
   });
 
-  if (professionalQuery.isLoading || queueQuery.isLoading) return <LoadingState />;
+  const returnToReceptionMutation = useMutation({
+    mutationFn: (item: QueueItem) =>
+      updateQueueStatus(item, "waiting_reception", clinicId, {
+        professional_id: null,
+        room_id: null,
+        started_at: null,
+        called_at: null,
+        notes: transferNotes.trim() || item.notes,
+      }),
+    onSuccess: () => {
+      toast.success("Paciente devolvido para recepção");
+      setTransferNotes("");
+      invalidate();
+    },
+    onError: (error: Error) => toast.error("Erro ao devolver", { description: error.message }),
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: (item: QueueItem) =>
+      updateQueueStatus(item, "waiting_service", clinicId, {
+        professional_id: transferProfessionalId === "__none__" ? null : transferProfessionalId,
+        room_id: transferRoomId === "__none__" ? null : transferRoomId,
+        started_at: null,
+        called_at: null,
+        notes: transferNotes.trim() || item.notes,
+      }),
+    onSuccess: () => {
+      toast.success("Paciente transferido para nova fila");
+      setTransferNotes("");
+      invalidate();
+    },
+    onError: (error: Error) => toast.error("Erro ao transferir", { description: error.message }),
+  });
+
+  const noShowMutation = useMutation({
+    mutationFn: (item: QueueItem) =>
+      updateQueueStatus(item, "no_show", clinicId, {
+        internal_notes: [internalNotes.trim(), transferNotes.trim()].filter(Boolean).join(" | ") || item.internal_notes,
+      }),
+    onSuccess: () => {
+      toast.success("Paciente marcado como não compareceu");
+      setTransferNotes("");
+      invalidate();
+    },
+    onError: (error: Error) => toast.error("Erro ao marcar no-show", { description: error.message }),
+  });
+
+  if (professionalQuery.isLoading || queueQuery.isLoading || professionalsQuery.isLoading || roomsQuery.isLoading) {
+    return <LoadingState />;
+  }
   if (professionalQuery.error) return <ErrorState error={professionalQuery.error} />;
+  if (professionalsQuery.error) return <ErrorState error={professionalsQuery.error} />;
+  if (roomsQuery.error) return <ErrorState error={roomsQuery.error} />;
 
   if (!professionalQuery.data) {
     return (
@@ -189,6 +256,72 @@ function ProfessionalContent({ clinicId, profileId }: { clinicId: string; profil
                   <CheckCircle2 className="size-4" /> Finalizar atendimento
                 </Button>
               )}
+            </div>
+
+            <div className="rounded-2xl border p-4">
+              <p className="mb-3 text-sm font-semibold">Transferência e exceções</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Transferir para profissional</Label>
+                  <Select value={transferProfessionalId} onValueChange={setTransferProfessionalId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Não definido</SelectItem>
+                      {(professionalsQuery.data ?? []).map((professional) => (
+                        <SelectItem key={professional.id} value={professional.id}>{professional.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Transferir para sala</Label>
+                  <Select value={transferRoomId} onValueChange={setTransferRoomId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Não definido</SelectItem>
+                      {(roomsQuery.data ?? []).map((room) => (
+                        <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="transfer-notes">Motivo/observação</Label>
+                <Textarea
+                  id="transfer-notes"
+                  rows={3}
+                  value={transferNotes}
+                  onChange={(event) => setTransferNotes(event.target.value)}
+                  placeholder="Descreva motivo da transferência, devolução ou no-show"
+                />
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => transferMutation.mutate(current)}
+                  disabled={transferMutation.isPending}
+                >
+                  Transferir
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => returnToReceptionMutation.mutate(current)}
+                  disabled={returnToReceptionMutation.isPending}
+                >
+                  Devolver para recepção
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => noShowMutation.mutate(current)}
+                  disabled={noShowMutation.isPending}
+                >
+                  Marcar no-show
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
