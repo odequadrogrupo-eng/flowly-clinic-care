@@ -85,6 +85,12 @@ function SuperadminHubPage() {
             href="/contingencia"
             buttonLabel="Abrir Contingência"
           />
+          <HubCard
+            title="Validação de Produção"
+            description="Checklist de publicação, smoke test e evidências de produção."
+            href="/superadmin-producao"
+            buttonLabel="Abrir Validação"
+          />
         </div>
       )}
     </Page>

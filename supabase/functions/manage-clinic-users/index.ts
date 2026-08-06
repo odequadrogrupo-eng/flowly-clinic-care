@@ -165,54 +165,54 @@ Deno.serve(async (req) => {
         throw new Error("Apenas superadmin pode criar clínicas.");
       }
 
-      const clinicInsert = await admin.serviceClient
-        .from("clinics")
-        .insert(body.clinic)
-        .select("id")
-        .single();
-      if (clinicInsert.error) throw clinicInsert.error;
-      const clinicId = (clinicInsert.data as { id: string }).id;
+      let createdAuthUserId: string | null = null;
 
-      const createdUser = await admin.serviceClient.auth.admin.createUser({
-        email: normalizeEmail(body.email),
-        password: body.tempPassword,
-        email_confirm: true,
-        user_metadata: { full_name: body.name },
-      });
-      if (createdUser.error) throw createdUser.error;
-
-      const userId = createdUser.data.user.id;
-      await ensureClinicProfile(admin.serviceClient, clinicId, {
-        id: userId,
-        email: body.email,
-        fullName: body.name,
-        role: "admin",
-        active: true,
-      });
-
-      const roomsCount = Math.max(0, Number(body.roomsCount ?? 0));
-      for (let i = 1; i <= roomsCount; i += 1) {
-        await admin.serviceClient.from("rooms").insert({
-          clinic_id: clinicId,
-          name: `Sala ${i}`,
-          number: `${i}`,
-          active: true,
+      try {
+        const createdUser = await admin.serviceClient.auth.admin.createUser({
+          email: normalizeEmail(body.email),
+          password: body.tempPassword,
+          email_confirm: true,
+          user_metadata: { full_name: body.name },
         });
-      }
+        if (createdUser.error) throw createdUser.error;
 
-      const receptionsCount = Math.max(0, Number(body.receptionsCount ?? 0));
-      for (let i = 1; i <= receptionsCount; i += 1) {
-        await admin.serviceClient.from("receptions" as never).insert({
-          clinic_id: clinicId,
-          name: `Guichê ${i}`,
-          location: "Recepção",
-          active: true,
-        } as never);
-      }
+        createdAuthUserId = createdUser.data.user.id;
 
-      return new Response(JSON.stringify({ ok: true, clinicId, adminUserId: userId }), {
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      });
+        const finalize = await admin.serviceClient.rpc(
+          "superadmin_finalize_clinic_onboarding" as never,
+          {
+            _actor_user_id: admin.userId,
+            _admin_user_id: createdAuthUserId,
+            _admin_name: body.name,
+            _admin_email: normalizeEmail(body.email),
+            _admin_phone: body.phone ?? null,
+            _clinic: body.clinic,
+            _rooms_count: Math.max(0, Number(body.roomsCount ?? 0)),
+            _receptions_count: Math.max(0, Number(body.receptionsCount ?? 0)),
+            _ticket_prefix: body.ticketPrefix ?? "N",
+            _force_password_change: true,
+          } as never,
+        );
+
+        if (finalize.error) throw finalize.error;
+
+        const result = finalize.data as {
+          ok: boolean;
+          clinicId: string;
+          adminUserId: string;
+          roomsCount: number;
+          receptionsCount: number;
+        };
+
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, "content-type": "application/json" },
+        });
+      } catch (error) {
+        if (createdAuthUserId) {
+          await admin.serviceClient.auth.admin.deleteUser(createdAuthUserId);
+        }
+        throw error;
+      }
     }
 
     if (body.action === "create") {

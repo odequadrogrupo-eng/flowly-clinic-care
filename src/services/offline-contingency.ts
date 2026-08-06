@@ -6,12 +6,25 @@ const STORE = "operations";
 export type PendingOperation = {
   id: string;
   clinicId: string;
-  kind: "ticket_issue" | "queue_call" | "patient_quick_create" | "queue_status" | "print_ticket";
+  kind:
+    | "ticket_issue"
+    | "patient_quick_create"
+    | "queue_call"
+    | "queue_repeat_call"
+    | "queue_status"
+    | "queue_start"
+    | "queue_finish"
+    | "queue_transfer"
+    | "queue_no_show"
+    | "print_ticket";
   payload: Record<string, unknown>;
   status: "pending" | "synced" | "conflict" | "failed";
   createdAt: string;
   syncedAt?: string;
   conflictDetails?: string;
+  attempts?: number;
+  nextRetryAt?: string;
+  lastError?: string;
 };
 
 async function getDb(): Promise<IDBDatabase> {
@@ -65,14 +78,20 @@ export async function listPendingOperations() {
 }
 
 export async function syncPendingOperations(clinicId: string) {
+  const nowIso = new Date().toISOString();
   const records = (await listPendingOperations()).filter(
-    (item) => item.clinicId === clinicId && item.status === "pending",
+    (item) =>
+      item.clinicId === clinicId &&
+      item.status === "pending" &&
+      (!item.nextRetryAt || item.nextRetryAt <= nowIso),
   );
   const results: PendingOperation[] = [];
 
   for (const record of records) {
     let status: PendingOperation["status"] = "synced";
     let conflictDetails: string | undefined;
+    let lastError: string | undefined;
+    const attempts = (record.attempts ?? 0) + 1;
 
     try {
       if (record.kind === "queue_status") {
@@ -85,15 +104,122 @@ export async function syncPendingOperations(clinicId: string) {
           .eq("clinic_id", clinicId);
         if (error) throw error;
       }
+
+      if (record.kind === "queue_start") {
+        const queueId = String(record.payload["queueId"] ?? "");
+        const { error } = await supabase
+          .from("queues" as never)
+          .update({ status: "in_service", started_at: new Date().toISOString() } as never)
+          .eq("id", queueId)
+          .eq("clinic_id", clinicId);
+        if (error) throw error;
+      }
+
+      if (record.kind === "queue_finish") {
+        const queueId = String(record.payload["queueId"] ?? "");
+        const { error } = await supabase
+          .from("queues" as never)
+          .update({ status: "finished", finished_at: new Date().toISOString() } as never)
+          .eq("id", queueId)
+          .eq("clinic_id", clinicId);
+        if (error) throw error;
+      }
+
+      if (record.kind === "queue_transfer") {
+        const queueId = String(record.payload["queueId"] ?? "");
+        const nextRoomId = String(record.payload["roomId"] ?? "");
+        const { error } = await supabase
+          .from("queues" as never)
+          .update({ room_id: nextRoomId, status: "waiting_service" } as never)
+          .eq("id", queueId)
+          .eq("clinic_id", clinicId);
+        if (error) throw error;
+      }
+
+      if (record.kind === "queue_no_show") {
+        const queueId = String(record.payload["queueId"] ?? "");
+        const { error } = await supabase
+          .from("queues" as never)
+          .update({ status: "no_show" } as never)
+          .eq("id", queueId)
+          .eq("clinic_id", clinicId);
+        if (error) throw error;
+      }
+
+      if (record.kind === "queue_call" || record.kind === "queue_repeat_call") {
+        const queueId = String(record.payload["queueId"] ?? "");
+        const displayName = String(record.payload["displayName"] ?? "Paciente");
+        const roomName = String(record.payload["roomName"] ?? "Recepção");
+
+        const { error: queueError } = await supabase
+          .from("queues" as never)
+          .update({ status: "called_service", called_at: new Date().toISOString() } as never)
+          .eq("id", queueId)
+          .eq("clinic_id", clinicId);
+        if (queueError) throw queueError;
+
+        const { error: callError } = await supabase.from("calls" as never).insert({
+          clinic_id: clinicId,
+          queue_id: queueId,
+          display_name: displayName,
+          room_name: roomName,
+          called_at: new Date().toISOString(),
+        } as never);
+        if (callError) throw callError;
+      }
+
+      if (record.kind === "patient_quick_create") {
+        const fullName = String(record.payload["fullName"] ?? "Paciente Offline");
+        const phone = String(record.payload["phone"] ?? "");
+        const localRef = String(record.payload["localRef"] ?? "");
+        const { error } = await supabase.from("patients" as never).insert({
+          clinic_id: clinicId,
+          full_name: fullName,
+          phone: phone || null,
+          notes: localRef ? `offline-ref:${localRef}` : null,
+          active: true,
+        } as never);
+        if (error) throw error;
+      }
+
+      if (record.kind === "ticket_issue") {
+        const token = String(record.payload["kioskToken"] ?? "");
+        const priority = Boolean(record.payload["priority"] ?? false);
+        const reason = String(record.payload["priorityReason"] ?? "");
+        const { data, error } = await supabase.rpc(
+          "issue_ticket_by_token" as never,
+          {
+            _token: token,
+            _priority: priority,
+            _priority_reason: reason || null,
+          } as never,
+        );
+        if (error) throw error;
+
+        const ok = (data as { ok?: boolean } | null)?.ok;
+        if (!ok) throw new Error("Falha ao emitir senha no replay offline.");
+      }
+
+      if (record.kind === "print_ticket") {
+        // Print replay currently marks as synced; the UI should request a new print after reconnection.
+      }
     } catch (error) {
-      status = "conflict";
+      status = attempts >= 3 ? "conflict" : "pending";
       conflictDetails = error instanceof Error ? error.message : "Falha na sincronização";
+      lastError = conflictDetails;
     }
 
     const updated: PendingOperation = {
       ...record,
       status,
       syncedAt: new Date().toISOString(),
+      attempts,
+      ...(status === "pending"
+        ? {
+            nextRetryAt: new Date(Date.now() + Math.min(60_000, 5_000 * attempts)).toISOString(),
+          }
+        : {}),
+      ...(lastError ? { lastError } : {}),
       ...(conflictDetails ? { conflictDetails } : {}),
     };
 

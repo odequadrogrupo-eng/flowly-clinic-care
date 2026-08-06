@@ -74,7 +74,7 @@ export async function assertAdmin(authHeader: string | null) {
 
   const typed = profile as {
     id: string;
-    clinic_id: string;
+    clinic_id: string | null;
     role: string;
     active: boolean;
     full_name: string | null;

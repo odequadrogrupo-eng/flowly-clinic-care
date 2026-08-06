@@ -25,6 +25,9 @@ const clinicSchema = z.object({
   admin_email: z.string().trim().email(),
   admin_phone: z.string().trim().optional(),
   admin_temp_password: z.string().min(8),
+  simulate_failure_at: z
+    .enum(["before_profile", "before_settings", "before_rooms", "before_receptions"])
+    .optional(),
 });
 
 export type SuperadminClinicInput = z.infer<typeof clinicSchema>;
@@ -83,7 +86,10 @@ export async function upsertClinicBySuperadmin(input: SuperadminClinicInput, cli
   const createUserRes = await supabase.functions.invoke("manage-clinic-users", {
     body: {
       action: "superadmin_create_clinic_with_admin",
-      clinic: payload,
+      clinic: {
+        ...payload,
+        simulate_failure_at: data.simulate_failure_at || undefined,
+      },
       name: data.admin_name,
       email: data.admin_email,
       phone: data.admin_phone || null,
@@ -138,15 +144,10 @@ export async function deleteClinicBySuperadmin(clinicId: string) {
 }
 
 export async function switchSuperadminClinicContext(clinicId: string) {
-  const userRes = await supabase.auth.getUser();
-  const userId = userRes.data.user?.id;
-  if (!userId) throw new Error("Usuário não autenticado.");
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ clinic_id: clinicId })
-    .eq("id", userId)
-    .eq("role", "superadmin");
+  const { error } = await supabase.rpc(
+    "set_superadmin_support_context" as never,
+    { _clinic_id: clinicId } as never,
+  );
 
   if (error) throw error;
 }

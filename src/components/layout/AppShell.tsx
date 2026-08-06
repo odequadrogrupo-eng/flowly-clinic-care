@@ -167,6 +167,12 @@ const navItems: NavItem[] = [
     icon: Shield,
     roles: ["superadmin"],
   },
+  {
+    to: "/superadmin-producao",
+    label: "Superadmin · Produção",
+    icon: Activity,
+    roles: ["superadmin"],
+  },
 ];
 
 export function Brand({

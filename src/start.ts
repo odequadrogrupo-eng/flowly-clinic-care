@@ -3,6 +3,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { logPlatformError } from "@/services/platform-monitoring";
+import { initBrowserSentry } from "@/lib/sentry";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -32,6 +33,12 @@ export const startInstance = createStart(() => ({
 }));
 
 if (typeof window !== "undefined") {
+  initBrowserSentry({
+    dsn: import.meta.env["VITE_SENTRY_DSN"],
+    environment: import.meta.env["VITE_SENTRY_ENVIRONMENT"] ?? import.meta.env.MODE,
+    release: import.meta.env["VITE_SENTRY_RELEASE"] ?? "clinicflow-web",
+  });
+
   window.addEventListener("error", (event) => {
     void logPlatformError({
       clinicId: null,

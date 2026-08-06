@@ -53,6 +53,7 @@ function OnboardingWizard() {
     admin_email: "",
     admin_phone: "",
     admin_temp_password: "",
+    simulate_failure_at: undefined,
   });
 
   const createMutation = useMutation({
@@ -199,6 +200,19 @@ function OnboardingWizard() {
               Ao concluir, serão criados clínica, admin inicial, salas, guichês e configurações
               básicas.
             </p>
+            <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={Boolean(form.simulate_failure_at)}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    simulate_failure_at: event.target.checked ? "before_settings" : undefined,
+                  })
+                }
+              />
+              Simular falha transacional (teste de rollback/compensação)
+            </label>
           </div>
         ) : null}
 

@@ -10,6 +10,14 @@ import {
   listPendingOperations,
   syncPendingOperations,
 } from "@/services/offline-contingency";
+import { listClinicsForSuperadmin } from "@/services/superadmin";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/contingencia")({
   component: ContingencyPage,
@@ -25,13 +33,22 @@ function ContingencyPage() {
       description="Operação crítica em cenário offline e sincronização"
       allowed={["superadmin", "admin", "receptionist", "attendant"]}
     >
-      {(profile) => <ContingencyContent clinicId={profile.clinic_id} />}
+      {(profile) => <ContingencyContent role={profile.role} clinicId={profile.clinic_id} />}
     </Page>
   );
 }
 
-function ContingencyContent({ clinicId }: { clinicId: string }) {
+function ContingencyContent({ role, clinicId }: { role: string; clinicId: string | null }) {
   const queryClient = useQueryClient();
+  const clinicsQuery = useQuery({
+    queryKey: ["contingency-superadmin-clinics"],
+    queryFn: listClinicsForSuperadmin,
+    enabled: role === "superadmin",
+  });
+
+  const [selectedClinicId, setSelectedClinicId] = useState<string>(clinicId ?? "");
+  const effectiveClinicId =
+    role === "superadmin" ? selectedClinicId || clinicsQuery.data?.[0]?.id || "" : (clinicId ?? "");
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== "undefined" ? navigator.onLine : true,
   );
@@ -49,17 +66,18 @@ function ContingencyContent({ clinicId }: { clinicId: string }) {
   }, []);
 
   const pendingQuery = useQuery({
-    queryKey: ["contingency-pending", clinicId],
+    queryKey: ["contingency-pending", effectiveClinicId],
+    enabled: effectiveClinicId.length > 0,
     queryFn: async () =>
-      (await listPendingOperations()).filter((item) => item.clinicId === clinicId),
+      (await listPendingOperations()).filter((item) => item.clinicId === effectiveClinicId),
   });
 
   const syncMutation = useMutation({
-    mutationFn: () => syncPendingOperations(clinicId),
+    mutationFn: () => syncPendingOperations(effectiveClinicId),
     onSuccess: async () => {
       localStorage.setItem("clinicflow:contingency:last-sync", new Date().toISOString());
       toast.success("Sincronização concluída");
-      await queryClient.invalidateQueries({ queryKey: ["contingency-pending", clinicId] });
+      await queryClient.invalidateQueries({ queryKey: ["contingency-pending", effectiveClinicId] });
     },
     onError: (error: Error) => toast.error("Erro de sincronização", { description: error.message }),
   });
@@ -67,12 +85,12 @@ function ContingencyContent({ clinicId }: { clinicId: string }) {
   const seedMutation = useMutation({
     mutationFn: () =>
       enqueueOperation({
-        clinicId,
+        clinicId: effectiveClinicId,
         kind: "queue_status",
         payload: { queueId: "offline-sample", status: "called_reception" },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["contingency-pending", clinicId] });
+      await queryClient.invalidateQueries({ queryKey: ["contingency-pending", effectiveClinicId] });
       toast.success("Operação de contingência adicionada");
     },
   });
@@ -83,6 +101,26 @@ function ContingencyContent({ clinicId }: { clinicId: string }) {
 
   return (
     <div className="space-y-4">
+      {role === "superadmin" ? (
+        <section className="card-soft p-4">
+          <h2 className="font-semibold">Clínica alvo</h2>
+          <div className="mt-2 max-w-sm">
+            <Select value={effectiveClinicId} onValueChange={setSelectedClinicId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a clínica" />
+              </SelectTrigger>
+              <SelectContent>
+                {(clinicsQuery.data ?? []).map((clinic) => (
+                  <SelectItem key={clinic.id} value={clinic.id}>
+                    {clinic.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+      ) : null}
+
       <section className="card-soft p-4">
         <h2 className="font-semibold">Status de conexão</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -104,6 +142,58 @@ function ContingencyContent({ clinicId }: { clinicId: string }) {
           </Button>
           <Button variant="outline" onClick={() => seedMutation.mutate()}>
             Simular operação pendente
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              enqueueOperation({
+                clinicId: effectiveClinicId,
+                kind: "ticket_issue",
+                payload: { kioskToken: "token-placeholder", priority: false },
+              })
+            }
+          >
+            Simular emissão de senha
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              enqueueOperation({
+                clinicId: effectiveClinicId,
+                kind: "queue_call",
+                payload: {
+                  queueId: "offline-queue-1",
+                  displayName: "Paciente Offline",
+                  roomName: "Sala 04",
+                },
+              })
+            }
+          >
+            Simular chamada
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              enqueueOperation({
+                clinicId: effectiveClinicId,
+                kind: "queue_transfer",
+                payload: { queueId: "offline-queue-1", roomId: "room-2" },
+              })
+            }
+          >
+            Simular transferência
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              enqueueOperation({
+                clinicId: effectiveClinicId,
+                kind: "queue_no_show",
+                payload: { queueId: "offline-queue-2" },
+              })
+            }
+          >
+            Simular no-show
           </Button>
         </div>
       </section>

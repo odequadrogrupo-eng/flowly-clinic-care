@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "echo \"No automated tests configured\"",
+    "test": "tsx --test tests/**/*.test.ts",
     "format": "prettier --write .",
     "quality:check": "npm run typecheck && npm run build",
     "quality:strict": "npm run typecheck && npm run lint && npm run build",
@@ -61,6 +61,8 @@
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
+    "@sentry/browser": "^9.37.0",
+    "@sentry/node": "^9.37.0",
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
@@ -88,6 +90,7 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
+    "tsx": "^4.20.6",
     "vite": "^8.2.0"
   }
 }

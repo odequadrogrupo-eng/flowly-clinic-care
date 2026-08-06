@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { initServerSentry } from "@/lib/sentry";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -47,6 +48,13 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const sentryEnv = process.env["SENTRY_ENVIRONMENT"] ?? process.env["NODE_ENV"];
+      initServerSentry({
+        ...(process.env["SENTRY_DSN"] ? { dsn: process.env["SENTRY_DSN"] } : {}),
+        ...(sentryEnv ? { environment: sentryEnv } : {}),
+        release: process.env["SENTRY_RELEASE"] ?? "clinicflow-ssr",
+      });
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

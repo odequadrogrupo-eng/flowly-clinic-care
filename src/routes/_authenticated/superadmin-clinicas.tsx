@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  getSelectedClinicIdForSuperadmin,
+  setSelectedClinicIdForSuperadmin,
+} from "@/services/superadmin-context";
+import {
   deleteClinicBySuperadmin,
   listClinicsForSuperadmin,
   type SuperadminClinicInput,
@@ -73,6 +77,9 @@ function SuperadminClinicsContent({
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SuperadminClinicInput>(initialForm);
   const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
+  const [selectedSupportClinicId, setSelectedSupportClinicId] = useState<string | null>(
+    getSelectedClinicIdForSuperadmin() ?? currentClinicId,
+  );
   const isSuperadmin = role === "superadmin";
 
   const clinicsQuery = useQuery({
@@ -117,6 +124,11 @@ function SuperadminClinicsContent({
     mutationFn: async (clinicId: string) => switchSuperadminClinicContext(clinicId),
     onSuccess: async () => {
       await queryClient.invalidateQueries();
+      setSelectedSupportClinicId((prev) => {
+        const current = prev ?? null;
+        setSelectedClinicIdForSuperadmin(current);
+        return current;
+      });
       toast.success("Contexto da clínica atualizado");
     },
     onError: (error: Error) =>
@@ -328,9 +340,13 @@ function SuperadminClinicsContent({
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  variant={currentClinicId === clinic.id ? "default" : "outline"}
+                  variant={selectedSupportClinicId === clinic.id ? "default" : "outline"}
                   size="sm"
-                  onClick={() => switchClinicMutation.mutate(clinic.id)}
+                  onClick={() => {
+                    setSelectedSupportClinicId(clinic.id);
+                    setSelectedClinicIdForSuperadmin(clinic.id);
+                    switchClinicMutation.mutate(clinic.id);
+                  }}
                   disabled={switchClinicMutation.isPending}
                 >
                   Acessar clínica

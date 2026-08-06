@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Page } from "@/components/layout/Page";
@@ -10,6 +11,14 @@ import {
   jsonToCsvRows,
   listBackupExports,
 } from "@/services/backup";
+import { listClinicsForSuperadmin } from "@/services/superadmin";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/superadmin-backup")({
   component: SuperadminBackupPage,
@@ -25,14 +34,28 @@ function SuperadminBackupPage() {
       description="Exportação segura por clínica e política de retenção"
       allowed={["superadmin"]}
     >
-      {(profile) => <BackupContent clinicId={profile.clinic_id} />}
+      {(profile) => <BackupContent profileClinicId={profile.clinic_id} />}
     </Page>
   );
 }
 
-function BackupContent({ clinicId }: { clinicId: string }) {
+function BackupContent({ profileClinicId }: { profileClinicId: string | null }) {
+  const clinicsQuery = useQuery({
+    queryKey: ["superadmin-backup-clinics"],
+    queryFn: listClinicsForSuperadmin,
+  });
+
+  const defaultClinicId = useMemo(() => {
+    if (profileClinicId) return profileClinicId;
+    return clinicsQuery.data?.[0]?.id ?? "";
+  }, [profileClinicId, clinicsQuery.data]);
+
+  const [selectedClinicId, setSelectedClinicId] = useState<string>(defaultClinicId);
+  const clinicId = selectedClinicId || defaultClinicId;
+
   const exportsQuery = useQuery({
     queryKey: ["backup-exports", clinicId],
+    enabled: clinicId.length > 0,
     queryFn: () => listBackupExports(clinicId),
   });
 
@@ -63,6 +86,24 @@ function BackupContent({ clinicId }: { clinicId: string }) {
 
   return (
     <div className="space-y-4">
+      <section className="card-soft p-4">
+        <h2 className="font-semibold">Clínica alvo</h2>
+        <div className="mt-2 max-w-sm">
+          <Select value={clinicId} onValueChange={setSelectedClinicId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a clínica" />
+            </SelectTrigger>
+            <SelectContent>
+              {(clinicsQuery.data ?? []).map((clinic) => (
+                <SelectItem key={clinic.id} value={clinic.id}>
+                  {clinic.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </section>
+
       <section className="card-soft p-4">
         <h2 className="font-semibold">Status de backup</h2>
         <p className="text-sm text-muted-foreground">
