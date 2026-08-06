@@ -76,6 +76,7 @@ export async function signUpWithClinic(input: {
   password: string;
   fullName: string;
   clinicName?: string;
+  clinicSlug?: string;
   inviteToken?: string;
   inviteRole?: "admin" | "receptionist" | "attendant" | "professional" | "public_display";
 }) {
@@ -89,6 +90,9 @@ export async function signUpWithClinic(input: {
     if (data.inviteRole) metadata["invite_role"] = data.inviteRole;
   } else {
     metadata["clinic_name"] = data.clinicName ?? "";
+    if (input.clinicSlug && input.clinicSlug.trim().length > 0) {
+      metadata["clinic_slug"] = input.clinicSlug.trim().toLowerCase();
+    }
   }
 
   const { data: signUpData, error } = await supabase.auth.signUp({

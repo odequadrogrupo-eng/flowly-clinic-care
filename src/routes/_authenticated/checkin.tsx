@@ -51,7 +51,7 @@ function CheckinPage() {
     <Page
       title="Check-in de paciente"
       description="Busque o paciente e confirme a entrada na fila"
-      allowed={["admin", "receptionist", "attendant"]}
+      allowed={["admin", "receptionist"]}
     >
       {(profile) => <CheckinContent clinicId={profile.clinic_id} />}
     </Page>

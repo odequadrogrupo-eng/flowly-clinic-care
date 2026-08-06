@@ -7,6 +7,11 @@ type ClinicRow = Database["public"]["Tables"]["clinics"]["Row"];
 
 const clinicSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da clinica."),
+  tenant_slug: z
+    .string()
+    .trim()
+    .min(2, "Informe um código/slug da clínica.")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífen."),
   legal_name: z.string().trim().optional(),
   document: z.string().trim().optional(),
   phone: z.string().trim().optional(),
@@ -18,6 +23,10 @@ const clinicSchema = z.object({
   address: z.string().trim().optional(),
   opening_hours: z.string().trim().optional(),
   logo_url: z.string().trim().optional(),
+  color_primary: z.string().trim().optional(),
+  color_primary_foreground: z.string().trim().optional(),
+  color_accent: z.string().trim().optional(),
+  color_accent_foreground: z.string().trim().optional(),
   voice_enabled: z.boolean(),
 });
 
@@ -35,6 +44,7 @@ export async function updateClinicById(
   const data = clinicSchema.parse(input);
   const payload = {
     name: data.name,
+    tenant_slug: data.tenant_slug,
     legal_name: nullIfEmpty(data.legal_name),
     document: nullIfEmpty(data.document),
     phone: nullIfEmpty(data.phone),
@@ -42,6 +52,16 @@ export async function updateClinicById(
     address: nullIfEmpty(data.address),
     opening_hours: nullIfEmpty(data.opening_hours),
     logo_url: nullIfEmpty(data.logo_url),
+    branding: {
+      display_name: data.name,
+      slug: data.tenant_slug,
+      colors: {
+        primary: nullIfEmpty(data.color_primary) ?? undefined,
+        primaryForeground: nullIfEmpty(data.color_primary_foreground) ?? undefined,
+        accent: nullIfEmpty(data.color_accent) ?? undefined,
+        accentForeground: nullIfEmpty(data.color_accent_foreground) ?? undefined,
+      },
+    },
     voice_enabled: data.voice_enabled,
   };
 

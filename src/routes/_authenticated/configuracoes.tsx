@@ -27,6 +27,12 @@ import { updateClinicById, type ClinicFormValues } from "@/services/clinic";
 import { listProfessionals } from "@/services/professionals";
 import { listRooms } from "@/services/rooms";
 import {
+  printDirect,
+  printWithBrowser,
+  tryPrintWithWebApi,
+  type PrintTicketPayload,
+} from "@/services/print";
+import {
   getKioskSettings,
   getPanelSettings,
   getPrintSettings,
@@ -82,6 +88,7 @@ function SettingsContent({
   profileId: string;
   initial: {
     name: string;
+    tenant_slug: string | null;
     legal_name: string | null;
     document: string | null;
     phone: string | null;
@@ -89,12 +96,14 @@ function SettingsContent({
     address: string | null;
     opening_hours: string | null;
     logo_url: string | null;
+    branding: unknown;
     voice_enabled: boolean;
   } | null;
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ClinicFormValues>({
     name: initial?.name ?? "",
+    tenant_slug: initial?.tenant_slug ?? "",
     legal_name: initial?.legal_name ?? "",
     document: initial?.document ?? "",
     phone: initial?.phone ?? "",
@@ -102,6 +111,34 @@ function SettingsContent({
     address: initial?.address ?? "",
     opening_hours: initial?.opening_hours ?? "",
     logo_url: initial?.logo_url ?? "",
+    color_primary:
+      typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
+        ? String(
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.["primary"] as string) ??
+              "",
+          )
+        : "",
+    color_primary_foreground:
+      typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
+        ? String(
+            ((initial.branding as { colors?: Record<string, unknown> }).colors
+              ?.["primaryForeground"] as string) ?? "",
+          )
+        : "",
+    color_accent:
+      typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
+        ? String(
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.["accent"] as string) ??
+              "",
+          )
+        : "",
+    color_accent_foreground:
+      typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
+        ? String(
+            ((initial.branding as { colors?: Record<string, unknown> }).colors
+              ?.["accentForeground"] as string) ?? "",
+          )
+        : "",
     voice_enabled: initial?.voice_enabled ?? true,
   });
 
@@ -302,6 +339,47 @@ function SettingsContent({
     },
   });
 
+  const testPrinterMutation = useMutation({
+    mutationFn: async () => {
+      if (!kioskForm || !printForm) return;
+      const payload: PrintTicketPayload = {
+        clinicName: form.name || "ClinicFlow",
+        logoUrl: form.logo_url || null,
+        welcomeMessage: printForm.welcome_message,
+        ticketCode: "T-999",
+        issuedAtIso: new Date().toISOString(),
+        footerMessage: printForm.footer_message,
+        paperSize: printForm.paper_size,
+        qrEnabled: printForm.qr_enabled,
+        qrValue: "TESTE-TOTEM",
+      };
+
+      const mode = kioskForm.print_method;
+      if (mode === "browser") {
+        printWithBrowser(payload);
+        return;
+      }
+
+      if (mode === "webusb" || mode === "webserial") {
+        try {
+          await printDirect(payload, mode);
+          return;
+        } catch {
+          if (printForm.browser_fallback_enabled) {
+            printWithBrowser(payload);
+            return;
+          }
+        }
+      }
+
+      const endpoint = printForm.local_agent_endpoint?.trim() || "http://127.0.0.1:3311/print";
+      await tryPrintWithWebApi(payload, mode === "agent" ? "webusb" : mode, endpoint);
+    },
+    onSuccess: () => toast.success("Teste de impressora enviado"),
+    onError: (error: Error) =>
+      toast.error("Falha no teste da impressora", { description: error.message }),
+  });
+
   useEffect(() => {
     if (shiftPeriod === "manha") {
       setShiftStartTime("08:00");
@@ -348,6 +426,20 @@ function SettingsContent({
               id="cfg-legal"
               value={form.legal_name}
               onChange={(event) => setForm({ ...form, legal_name: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-tenant">Código da clínica (slug)</Label>
+            <Input
+              id="cfg-tenant"
+              value={form.tenant_slug}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  tenant_slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                })
+              }
+              placeholder="ex.: club-medico"
             />
           </div>
           <div className="space-y-2">
@@ -400,6 +492,46 @@ function SettingsContent({
               onChange={(event) => setForm({ ...form, logo_url: event.target.value })}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-color-primary">Cor primária (OKLCH/HEX)</Label>
+            <Input
+              id="cfg-color-primary"
+              value={form.color_primary}
+              onChange={(event) => setForm({ ...form, color_primary: event.target.value })}
+              placeholder="ex.: oklch(0.55 0.16 250)"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-color-primary-fg">Cor do texto primário</Label>
+            <Input
+              id="cfg-color-primary-fg"
+              value={form.color_primary_foreground}
+              onChange={(event) =>
+                setForm({ ...form, color_primary_foreground: event.target.value })
+              }
+              placeholder="ex.: oklch(0.99 0.005 250)"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-color-accent">Cor de destaque</Label>
+            <Input
+              id="cfg-color-accent"
+              value={form.color_accent}
+              onChange={(event) => setForm({ ...form, color_accent: event.target.value })}
+              placeholder="ex.: oklch(0.68 0.14 165)"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-color-accent-fg">Cor do texto de destaque</Label>
+            <Input
+              id="cfg-color-accent-fg"
+              value={form.color_accent_foreground}
+              onChange={(event) =>
+                setForm({ ...form, color_accent_foreground: event.target.value })
+              }
+              placeholder="ex.: oklch(0.2 0.04 165)"
+            />
+          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
@@ -420,6 +552,9 @@ function SettingsContent({
       {kioskForm ? (
         <section className="card-soft p-5">
           <h2 className="font-semibold">Totem</h2>
+          <p className="text-sm text-muted-foreground">
+            URL pública exclusiva, modo kiosk e impressão automática para autoatendimento.
+          </p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -436,6 +571,14 @@ function SettingsContent({
                 onChange={(e) => setKioskForm({ ...kioskForm, kiosk_mode: e.target.checked })}
               />
               Modo kiosk/tela cheia
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={kioskForm.print_auto}
+                onChange={(e) => setKioskForm({ ...kioskForm, print_auto: e.target.checked })}
+              />
+              Impressão automática
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -479,6 +622,25 @@ function SettingsContent({
               onChange={(e) => setKioskForm({ ...kioskForm, footer_text: e.target.value })}
               placeholder="Mensagem de rodapé"
             />
+            <div className="space-y-2">
+              <Label>Método de impressão</Label>
+              <Select
+                value={kioskForm.print_method}
+                onValueChange={(value: KioskSettingsRow["print_method"]) =>
+                  setKioskForm({ ...kioskForm, print_method: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="browser">Navegador</SelectItem>
+                  <SelectItem value="webusb">WebUSB</SelectItem>
+                  <SelectItem value="webserial">WebSerial</SelectItem>
+                  <SelectItem value="agent">Agente Local</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="mt-4 rounded-xl border p-3">
             <p className="text-xs text-muted-foreground">URL pública do totem</p>
@@ -498,8 +660,20 @@ function SettingsContent({
                 Regenerar
               </Button>
             </div>
+            <ul className="mt-3 list-disc pl-5 text-xs text-muted-foreground">
+              <li>Abra a URL do totem em um tablet/monitor touch.</li>
+              <li>Ative modo tela cheia do navegador e fixe o atalho no sistema operacional.</li>
+              <li>Conecte a impressora térmica no método selecionado e valide no botão Testar.</li>
+            </ul>
           </div>
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => testPrinterMutation.mutate()}
+              disabled={testPrinterMutation.isPending}
+            >
+              Testar impressora
+            </Button>
             <Button
               onClick={() => saveKioskMutation.mutate()}
               disabled={saveKioskMutation.isPending}
