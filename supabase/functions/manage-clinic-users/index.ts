@@ -53,7 +53,12 @@ function randomPassword() {
   return `Tmp@${base}A1`;
 }
 
-async function findAuthUserIdByEmail(serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T> ? T["serviceClient"] : never, email: string) {
+async function findAuthUserIdByEmail(
+  serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T>
+    ? T["serviceClient"]
+    : never,
+  email: string,
+) {
   const normalized = normalizeEmail(email);
   let page = 1;
   const perPage = 200;
@@ -72,7 +77,9 @@ async function findAuthUserIdByEmail(serviceClient: ReturnType<typeof assertAdmi
 }
 
 async function ensureClinicProfile(
-  serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T> ? T["serviceClient"] : never,
+  serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T>
+    ? T["serviceClient"]
+    : never,
   clinicId: string,
   payload: { id: string; email: string; fullName: string; role: AppRole; active: boolean },
 ) {
@@ -99,7 +106,9 @@ async function ensureClinicProfile(
 }
 
 async function getClinicProfile(
-  serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T> ? T["serviceClient"] : never,
+  serviceClient: ReturnType<typeof assertAdmin> extends Promise<infer T>
+    ? T["serviceClient"]
+    : never,
   clinicId: string,
   userId: string,
 ) {
@@ -143,7 +152,8 @@ Deno.serve(async (req) => {
 
       const existingUserId = await findAuthUserIdByEmail(admin.serviceClient, email);
       const suppliedPassword = body.password?.trim();
-      const effectivePassword = suppliedPassword && suppliedPassword.length >= 8 ? suppliedPassword : randomPassword();
+      const effectivePassword =
+        suppliedPassword && suppliedPassword.length >= 8 ? suppliedPassword : randomPassword();
 
       let userId = existingUserId;
       let created = false;
@@ -216,7 +226,10 @@ Deno.serve(async (req) => {
         updatePayload.password = password;
       }
 
-      const updatedAuth = await admin.serviceClient.auth.admin.updateUserById(body.userId, updatePayload);
+      const updatedAuth = await admin.serviceClient.auth.admin.updateUserById(
+        body.userId,
+        updatePayload,
+      );
       if (updatedAuth.error) throw updatedAuth.error;
 
       const { error } = await admin.serviceClient

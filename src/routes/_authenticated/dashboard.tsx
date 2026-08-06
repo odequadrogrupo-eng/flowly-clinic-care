@@ -729,7 +729,10 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                   value={newUserEmail}
                   onChange={(event) => setNewUserEmail(event.target.value)}
                 />
-                <Select value={newUserRole} onValueChange={(value: AppRole) => setNewUserRole(value)}>
+                <Select
+                  value={newUserRole}
+                  onValueChange={(value: AppRole) => setNewUserRole(value)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

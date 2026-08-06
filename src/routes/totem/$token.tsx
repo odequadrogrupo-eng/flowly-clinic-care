@@ -27,8 +27,7 @@ function KioskPage() {
   });
 
   const issueMutation = useMutation({
-    mutationFn: async (priority: boolean) =>
-      issueTicketByToken(token, { priority }),
+    mutationFn: async (priority: boolean) => issueTicketByToken(token, { priority }),
     onSuccess: async (data) => {
       if (!data.ok || !data.ticket_code) return;
       setIssuedCode(data.ticket_code);

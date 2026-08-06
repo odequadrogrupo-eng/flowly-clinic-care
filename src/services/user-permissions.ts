@@ -216,8 +216,7 @@ export async function deleteClinicAuthUser(userId: string) {
   if (error) throw error;
 
   const result = data as
-    | { ok: true; action: "delete"; userId: string }
-    | { ok: false; error: string };
+    { ok: true; action: "delete"; userId: string } | { ok: false; error: string };
 
   if (!result?.ok) {
     throw new Error(result?.error ?? "Não foi possível remover usuário.");

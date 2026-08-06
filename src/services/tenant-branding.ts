@@ -99,10 +99,13 @@ export async function resolveTenantBranding(): Promise<TenantBranding> {
     return DEFAULT_BRANDING;
   }
 
-  const { data, error } = await supabase.rpc("resolve_clinic_branding" as never, {
-    _identifier: slug,
-    _host: host,
-  } as never);
+  const { data, error } = await supabase.rpc(
+    "resolve_clinic_branding" as never,
+    {
+      _identifier: slug,
+      _host: host,
+    } as never,
+  );
 
   if (error) {
     const stored = readStoredBranding();
@@ -116,7 +119,9 @@ export async function resolveTenantBranding(): Promise<TenantBranding> {
   }
 
   const record = row as Record<string, unknown>;
-  const rawBranding = isRecord(record["branding"]) ? (record["branding"] as Record<string, unknown>) : {};
+  const rawBranding = isRecord(record["branding"])
+    ? (record["branding"] as Record<string, unknown>)
+    : {};
   const colors = asColorMap(rawBranding["colors"]);
   const displayName =
     (typeof rawBranding["display_name"] === "string" && rawBranding["display_name"].trim()) ||
@@ -126,9 +131,7 @@ export async function resolveTenantBranding(): Promise<TenantBranding> {
   const resolved: TenantBranding = {
     clinicId: typeof record["clinic_id"] === "string" ? (record["clinic_id"] as string) : null,
     tenantSlug:
-      typeof record["tenant_slug"] === "string"
-        ? (record["tenant_slug"] as string)
-        : slug,
+      typeof record["tenant_slug"] === "string" ? (record["tenant_slug"] as string) : slug,
     displayName,
     logoUrl:
       typeof record["logo_url"] === "string" && record["logo_url"].trim().length > 0

@@ -114,29 +114,33 @@ function SettingsContent({
     color_primary:
       typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
         ? String(
-            ((initial.branding as { colors?: Record<string, unknown> }).colors?.["primary"] as string) ??
-              "",
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.[
+              "primary"
+            ] as string) ?? "",
           )
         : "",
     color_primary_foreground:
       typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
         ? String(
-            ((initial.branding as { colors?: Record<string, unknown> }).colors
-              ?.["primaryForeground"] as string) ?? "",
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.[
+              "primaryForeground"
+            ] as string) ?? "",
           )
         : "",
     color_accent:
       typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
         ? String(
-            ((initial.branding as { colors?: Record<string, unknown> }).colors?.["accent"] as string) ??
-              "",
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.[
+              "accent"
+            ] as string) ?? "",
           )
         : "",
     color_accent_foreground:
       typeof initial?.branding === "object" && initial?.branding && "colors" in initial.branding
         ? String(
-            ((initial.branding as { colors?: Record<string, unknown> }).colors
-              ?.["accentForeground"] as string) ?? "",
+            ((initial.branding as { colors?: Record<string, unknown> }).colors?.[
+              "accentForeground"
+            ] as string) ?? "",
           )
         : "",
     voice_enabled: initial?.voice_enabled ?? true,
