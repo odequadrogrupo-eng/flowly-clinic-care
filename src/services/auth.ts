@@ -11,41 +11,49 @@ const signInSchema = z.object({
   password: passwordSchema,
 });
 
-const signUpSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  fullName: nonEmptySchema,
-  clinicName: z.string().trim().optional(),
-  inviteToken: z.string().trim().optional(),
-  inviteRole: z.enum(["admin", "receptionist", "attendant", "professional", "public_display"]).optional(),
-}).superRefine((data, ctx) => {
-  if (!data.inviteToken && (!data.clinicName || data.clinicName.trim().length === 0)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Informe o nome da clinica.",
-      path: ["clinicName"],
-    });
-  }
-});
+const signUpSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    fullName: nonEmptySchema,
+    clinicName: z.string().trim().optional(),
+    inviteToken: z.string().trim().optional(),
+    inviteRole: z
+      .enum(["admin", "receptionist", "attendant", "professional", "public_display"])
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.inviteToken && (!data.clinicName || data.clinicName.trim().length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe o nome da clinica.",
+        path: ["clinicName"],
+      });
+    }
+  });
 
 const requestResetSchema = z.object({
   email: emailSchema,
 });
 
-const updatePasswordSchema = z.object({
-  password: passwordSchema,
-  confirmPassword: passwordSchema,
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas nao conferem.",
-  path: ["confirmPassword"],
-});
+const updatePasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas nao conferem.",
+    path: ["confirmPassword"],
+  });
 
 function mapAuthErrorMessage(message: string) {
   if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos.";
   if (message.includes("Email not confirmed")) return "Confirme seu e-mail antes de entrar.";
   if (message.includes("User already registered")) return "Este e-mail ja esta cadastrado.";
-  if (message.includes("Password should be at least")) return "A senha precisa ter pelo menos 6 caracteres.";
-  if (message.includes("over_email_send_rate_limit")) return "Muitas tentativas. Tente novamente em instantes.";
+  if (message.includes("Password should be at least"))
+    return "A senha precisa ter pelo menos 6 caracteres.";
+  if (message.includes("over_email_send_rate_limit"))
+    return "Muitas tentativas. Tente novamente em instantes.";
   return message;
 }
 

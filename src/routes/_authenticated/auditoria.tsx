@@ -6,16 +6,28 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/States
 import { Page } from "@/components/layout/Page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listAuditLogs, sanitizeAuditDetails } from "@/services/audit";
 
 export const Route = createFileRoute("/_authenticated/auditoria")({
   head: () => ({
     meta: [
       { title: "Auditoria e LGPD — ClinicFlow" },
-      { name: "description", content: "Rastro de auditoria para ações no sistema com foco em governança e LGPD." },
+      {
+        name: "description",
+        content: "Rastro de auditoria para ações no sistema com foco em governança e LGPD.",
+      },
       { property: "og:title", content: "Auditoria e LGPD — ClinicFlow" },
-      { property: "og:description", content: "Monitore operações críticas e dados de auditoria da clínica." },
+      {
+        property: "og:description",
+        content: "Monitore operações críticas e dados de auditoria da clínica.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -73,11 +85,21 @@ function AuditContent({ clinicId }: { clinicId: string }) {
       <div className="grid gap-3 rounded-2xl border p-4 md:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="audit-from">De</Label>
-          <Input id="audit-from" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+          <Input
+            id="audit-from"
+            type="date"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="audit-to">Até</Label>
-          <Input id="audit-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+          <Input
+            id="audit-to"
+            type="date"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label>Entidade</Label>
@@ -120,7 +142,10 @@ function AuditContent({ clinicId }: { clinicId: string }) {
 
       {logs.length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Sem eventos" description="Nenhum evento de auditoria encontrado para os filtros selecionados." />
+          <EmptyState
+            title="Sem eventos"
+            description="Nenhum evento de auditoria encontrado para os filtros selecionados."
+          />
         </div>
       ) : (
         <div className="space-y-2">

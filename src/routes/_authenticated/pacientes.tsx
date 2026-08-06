@@ -39,7 +39,10 @@ export const Route = createFileRoute("/_authenticated/pacientes")({
   head: () => ({
     meta: [
       { title: "Pacientes — ClinicFlow" },
-      { name: "description", content: "Cadastro de pacientes da clínica: nome, contato e observações." },
+      {
+        name: "description",
+        content: "Cadastro de pacientes da clínica: nome, contato e observações.",
+      },
       { property: "og:title", content: "Pacientes — ClinicFlow" },
       { property: "og:description", content: "Gestão do cadastro de pacientes no ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -60,7 +63,11 @@ const emptyForm: PatientFormValues = {
 
 function PatientsPage() {
   return (
-    <Page title="Pacientes" description="Cadastro e histórico de contato" allowed={["admin", "receptionist", "attendant"]}>
+    <Page
+      title="Pacientes"
+      description="Cadastro e histórico de contato"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => <PatientsContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -96,7 +103,8 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
       setForm(null);
       invalidate();
     },
-    onError: (mutationError: Error) => toast.error("Erro ao salvar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao salvar", { description: mutationError.message }),
   });
 
   const remove = useMutation({
@@ -134,7 +142,10 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
         <ErrorState error={error} />
       ) : (data ?? []).length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Nenhum paciente" description="Cadastre o primeiro paciente da clínica." />
+          <EmptyState
+            title="Nenhum paciente"
+            description="Cadastre o primeiro paciente da clínica."
+          />
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -144,8 +155,12 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
               <p className="mt-1 text-sm text-muted-foreground">
                 {patient.phone ?? "Sem telefone"} · {patient.cpf ?? "Sem CPF"}
               </p>
-              {patient.email ? <p className="text-sm text-muted-foreground">{patient.email}</p> : null}
-              {patient.address ? <p className="text-sm text-muted-foreground">{patient.address}</p> : null}
+              {patient.email ? (
+                <p className="text-sm text-muted-foreground">{patient.email}</p>
+              ) : null}
+              {patient.address ? (
+                <p className="text-sm text-muted-foreground">{patient.address}</p>
+              ) : null}
               {patient.notes ? <p className="mt-2 text-sm">{patient.notes}</p> : null}
               <div className="mt-3 flex gap-2">
                 <Button
@@ -193,7 +208,11 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="p-cpf">CPF</Label>
-                  <Input id="p-cpf" value={form.cpf} onChange={(event) => setForm({ ...form, cpf: event.target.value })} />
+                  <Input
+                    id="p-cpf"
+                    value={form.cpf}
+                    onChange={(event) => setForm({ ...form, cpf: event.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="p-birth">Data de nascimento</Label>

@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Ban, BellRing, CheckCircle2, PlayCircle, UserPlus } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Ban,
+  BellRing,
+  CheckCircle2,
+  PlayCircle,
+  UserPlus,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -36,9 +44,16 @@ export const Route = createFileRoute("/_authenticated/fila")({
   head: () => ({
     meta: [
       { title: "Fila de atendimento — ClinicFlow" },
-      { name: "description", content: "Gerencie a fila de pacientes em tempo real: chamar, iniciar, finalizar e cancelar." },
+      {
+        name: "description",
+        content:
+          "Gerencie a fila de pacientes em tempo real: chamar, iniciar, finalizar e cancelar.",
+      },
       { property: "og:title", content: "Fila de atendimento — ClinicFlow" },
-      { property: "og:description", content: "Fila de pacientes da clínica atualizada em tempo real." },
+      {
+        property: "og:description",
+        content: "Fila de pacientes da clínica atualizada em tempo real.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -100,7 +115,8 @@ function QueueContent({ clinicId }: { clinicId: string }) {
       toast.success("Paciente chamado");
       invalidate();
     },
-    onError: (mutationError: Error) => toast.error("Erro ao chamar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao chamar", { description: mutationError.message }),
   });
 
   const statusMutation = useMutation({
@@ -110,7 +126,8 @@ function QueueContent({ clinicId }: { clinicId: string }) {
       toast.success(`Atendimento ${statusLabels[variables.status].toLowerCase()}`);
       invalidate();
     },
-    onError: (mutationError: Error) => toast.error("Erro ao atualizar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao atualizar", { description: mutationError.message }),
   });
 
   const reorderMutation = useMutation({
@@ -118,7 +135,8 @@ function QueueContent({ clinicId }: { clinicId: string }) {
       await reorderQueueItems(a, b);
     },
     onSuccess: invalidate,
-    onError: (mutationError: Error) => toast.error("Erro ao reordenar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao reordenar", { description: mutationError.message }),
   });
 
   if (isLoading) return <LoadingState label="Carregando fila..." />;
@@ -126,7 +144,10 @@ function QueueContent({ clinicId }: { clinicId: string }) {
 
   const items = data ?? [];
   const waiting = items.filter(
-    (item) => item.status === "waiting" || item.status === "waiting_reception" || item.status === "waiting_service",
+    (item) =>
+      item.status === "waiting" ||
+      item.status === "waiting_reception" ||
+      item.status === "waiting_service",
   );
 
   function move(item: QueueItem, direction: -1 | 1) {
@@ -157,7 +178,10 @@ function QueueContent({ clinicId }: { clinicId: string }) {
           const sameGroup = waiting.filter((candidate) => candidate.priority === item.priority);
           const groupIndex = sameGroup.findIndex((candidate) => candidate.id === item.id);
           return (
-            <div key={item.id} className="card-soft flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
+            <div
+              key={item.id}
+              className="card-soft flex flex-col gap-4 p-4 lg:flex-row lg:items-center"
+            >
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 {item.status === "waiting" ? (
                   <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-sm font-bold">
@@ -172,7 +196,9 @@ function QueueContent({ clinicId }: { clinicId: string }) {
                         Preferencial
                       </span>
                     ) : null}
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[item.status]}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[item.status]}`}
+                    >
                       {statusLabels[item.status]}
                     </span>
                   </div>
@@ -191,7 +217,9 @@ function QueueContent({ clinicId }: { clinicId: string }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {item.status === "waiting" || item.status === "waiting_reception" || item.status === "waiting_service" ? (
+                {item.status === "waiting" ||
+                item.status === "waiting_reception" ||
+                item.status === "waiting_service" ? (
                   <>
                     <Button
                       variant="outline"
@@ -214,10 +242,23 @@ function QueueContent({ clinicId }: { clinicId: string }) {
                   </>
                 ) : null}
 
-                {item.status === "waiting" || item.status === "called" || item.status === "waiting_reception" || item.status === "called_reception" || item.status === "waiting_service" || item.status === "called_service" ? (
-                  <Button size="sm" onClick={() => callMutation.mutate(item)} disabled={callMutation.isPending}>
+                {item.status === "waiting" ||
+                item.status === "called" ||
+                item.status === "waiting_reception" ||
+                item.status === "called_reception" ||
+                item.status === "waiting_service" ||
+                item.status === "called_service" ? (
+                  <Button
+                    size="sm"
+                    onClick={() => callMutation.mutate(item)}
+                    disabled={callMutation.isPending}
+                  >
                     <BellRing className="size-4" />
-                    {item.status === "called" || item.status === "called_reception" || item.status === "called_service" ? "Repetir" : "Chamar"}
+                    {item.status === "called" ||
+                    item.status === "called_reception" ||
+                    item.status === "called_service"
+                      ? "Repetir"
+                      : "Chamar"}
                   </Button>
                 ) : null}
 
@@ -237,7 +278,11 @@ function QueueContent({ clinicId }: { clinicId: string }) {
                   </Button>
                 ) : null}
 
-                <Button size="sm" variant="ghost" onClick={() => setConfirm({ item, status: "cancelled" })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setConfirm({ item, status: "cancelled" })}
+                >
                   <Ban className="size-4" /> Cancelar
                 </Button>
               </div>
@@ -253,7 +298,8 @@ function QueueContent({ clinicId }: { clinicId: string }) {
               {confirm?.status === "cancelled" ? "Cancelar atendimento?" : "Finalizar atendimento?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirm?.item.patients?.full_name} — esta ação será registrada no histórico da clínica.
+              {confirm?.item.patients?.full_name} — esta ação será registrada no histórico da
+              clínica.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -32,24 +32,87 @@ import { cn } from "@/lib/utils";
 type NavItem = { to: string; label: string; icon: typeof Users; roles: AppRole[] };
 
 const navItems: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "receptionist", "attendant", "professional"] },
-  { to: "/fila", label: "Fila de atendimento", icon: ListOrdered, roles: ["admin", "receptionist", "attendant"] },
-  { to: "/checkin", label: "Check-in", icon: UserPlus, roles: ["admin", "receptionist", "attendant"] },
-  { to: "/recepcao", label: "Recepção", icon: ConciergeBell, roles: ["admin", "receptionist", "attendant"] },
-  { to: "/agenda", label: "Agenda", icon: CalendarClock, roles: ["admin", "receptionist", "attendant", "professional"] },
-  { to: "/chamada", label: "Chamadas", icon: Bell, roles: ["admin", "receptionist", "attendant", "professional"] },
-  { to: "/atendimento", label: "Meu atendimento", icon: ClipboardList, roles: ["admin", "professional"] },
-  { to: "/pacientes", label: "Pacientes", icon: Users, roles: ["admin", "receptionist", "attendant"] },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/fila",
+    label: "Fila de atendimento",
+    icon: ListOrdered,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/checkin",
+    label: "Check-in",
+    icon: UserPlus,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/recepcao",
+    label: "Recepção",
+    icon: ConciergeBell,
+    roles: ["admin", "receptionist", "attendant"],
+  },
+  {
+    to: "/agenda",
+    label: "Agenda",
+    icon: CalendarClock,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/chamada",
+    label: "Chamadas",
+    icon: Bell,
+    roles: ["admin", "receptionist", "attendant", "professional"],
+  },
+  {
+    to: "/atendimento",
+    label: "Meu atendimento",
+    icon: ClipboardList,
+    roles: ["admin", "professional"],
+  },
+  {
+    to: "/pacientes",
+    label: "Pacientes",
+    icon: Users,
+    roles: ["admin", "receptionist", "attendant"],
+  },
   { to: "/profissionais", label: "Profissionais", icon: Stethoscope, roles: ["admin"] },
   { to: "/salas", label: "Salas", icon: DoorOpen, roles: ["admin"] },
-  { to: "/relatorios", label: "Relatórios", icon: FileBarChart, roles: ["admin", "receptionist", "attendant"] },
+  {
+    to: "/relatorios",
+    label: "Relatórios",
+    icon: FileBarChart,
+    roles: ["admin", "receptionist", "attendant"],
+  },
   { to: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
-  { to: "/impressao", label: "Impressão", icon: Printer, roles: ["admin", "receptionist", "attendant"] },
+  {
+    to: "/impressao",
+    label: "Impressão",
+    icon: Printer,
+    roles: ["admin", "receptionist", "attendant"],
+  },
   { to: "/auditoria", label: "Auditoria/LGPD", icon: Shield, roles: ["admin"] },
-  { to: "/painel", label: "Painel de chamada", icon: MonitorPlay, roles: ["admin", "receptionist", "attendant", "professional", "public_display"] },
+  {
+    to: "/painel",
+    label: "Painel de chamada",
+    icon: MonitorPlay,
+    roles: ["admin", "receptionist", "attendant", "professional", "public_display"],
+  },
 ];
 
-export function Brand({ className, logoSrc, fallbackText }: { className?: string; logoSrc?: string | null | undefined; fallbackText?: string }) {
+export function Brand({
+  className,
+  logoSrc,
+  fallbackText,
+}: {
+  className?: string;
+  logoSrc?: string | null | undefined;
+  fallbackText?: string;
+}) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       {logoSrc ? (
@@ -169,7 +232,9 @@ export function AppShell({
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-semibold sm:text-lg">{title}</h1>
             {description ? (
-              <p className="hidden truncate text-sm text-muted-foreground sm:block">{description}</p>
+              <p className="hidden truncate text-sm text-muted-foreground sm:block">
+                {description}
+              </p>
             ) : null}
           </div>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
@@ -181,7 +246,15 @@ export function AppShell({
   );
 }
 
-export function RoleGate({ role, allowed, children }: { role: AppRole; allowed: AppRole[]; children: ReactNode }) {
+export function RoleGate({
+  role,
+  allowed,
+  children,
+}: {
+  role: AppRole;
+  allowed: AppRole[];
+  children: ReactNode;
+}) {
   if (!allowed.includes(role)) {
     return (
       <div className="card-soft p-8 text-center">

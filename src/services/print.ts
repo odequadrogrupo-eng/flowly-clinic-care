@@ -71,7 +71,12 @@ async function printViaWebUsb(data: Uint8Array) {
   }
 
   const device = (await usb.requestDevice({ filters: [] })) as {
-    configuration?: { interfaces?: Array<{ interfaceNumber: number; alternates?: Array<{ endpoints?: Array<{ endpointNumber: number; direction: string }> }> }> };
+    configuration?: {
+      interfaces?: Array<{
+        interfaceNumber: number;
+        alternates?: Array<{ endpoints?: Array<{ endpointNumber: number; direction: string }> }>;
+      }>;
+    };
     open(): Promise<void>;
     selectConfiguration(value: number): Promise<void>;
     claimInterface(interfaceNumber: number): Promise<void>;
@@ -152,7 +157,10 @@ async function printViaWebSerial(data: Uint8Array) {
   }
 }
 
-export async function printDirect(payload: PrintTicketPayload, mode: "webusb" | "webserial"): Promise<DirectPrintResult> {
+export async function printDirect(
+  payload: PrintTicketPayload,
+  mode: "webusb" | "webserial",
+): Promise<DirectPrintResult> {
   const data = encodeEscPos(payload);
   if (mode === "webusb") {
     await printViaWebUsb(data);

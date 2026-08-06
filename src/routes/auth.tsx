@@ -20,7 +20,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar — ClinicFlow" },
-      { name: "description", content: "Acesse o ClinicFlow para gerenciar a fila de atendimento da sua clínica." },
+      {
+        name: "description",
+        content: "Acesse o ClinicFlow para gerenciar a fila de atendimento da sua clínica.",
+      },
       { property: "og:title", content: "Entrar — ClinicFlow" },
       { property: "og:description", content: "Acesso da equipe da clínica ao ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -42,7 +45,13 @@ function AuthPage() {
 
   const inviteParams = useMemo(() => {
     if (typeof window === "undefined") {
-      return { inviteToken: "", inviteRole: "", invitedEmail: "", invitedClinicName: "", invitedMode: "" };
+      return {
+        inviteToken: "",
+        inviteRole: "",
+        invitedEmail: "",
+        invitedClinicName: "",
+        invitedMode: "",
+      };
     }
     const params = new URLSearchParams(window.location.search);
     return {
@@ -115,7 +124,8 @@ function AuthPage() {
 
       signUpData = await signUpWithClinic(signUpPayload);
     } catch (authError) {
-      handledError = authError instanceof Error ? authError.message : "Nao foi possivel criar a conta.";
+      handledError =
+        authError instanceof Error ? authError.message : "Nao foi possivel criar a conta.";
     }
     setLoading(false);
     if (handledError) {
@@ -140,14 +150,17 @@ function AuthPage() {
     try {
       await requestPasswordReset(email);
     } catch (authError) {
-      handledError = authError instanceof Error ? authError.message : "Nao foi possivel enviar o e-mail.";
+      handledError =
+        authError instanceof Error ? authError.message : "Nao foi possivel enviar o e-mail.";
     }
     setLoading(false);
     if (handledError) {
       setError(handledError);
       return;
     }
-    toast.success("E-mail enviado", { description: "Confira sua caixa de entrada para redefinir a senha." });
+    toast.success("E-mail enviado", {
+      description: "Confira sua caixa de entrada para redefinir a senha.",
+    });
     setMode("login");
   }
 
@@ -180,17 +193,34 @@ function AuthPage() {
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@clinica.com.br" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="voce@clinica.com.br"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
-                  <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
                 {error ? <p className="text-sm text-destructive">{error}</p> : null}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Entrando..." : "Entrar"}
                 </Button>
-                <button type="button" onClick={() => setMode("reset")} className="w-full text-sm text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setMode("reset")}
+                  className="w-full text-sm text-primary hover:underline"
+                >
                   Esqueci minha senha
                 </button>
               </form>
@@ -200,7 +230,11 @@ function AuthPage() {
               <form className="space-y-4" onSubmit={handleSignUp}>
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Seu nome completo</Label>
-                  <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="clinicName">Nome da clínica</Label>
@@ -213,11 +247,22 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signupEmail">E-mail</Label>
-                  <Input id="signupEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signupPassword">Senha</Label>
-                  <Input id="signupPassword" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input
+                    id="signupPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
                 {error ? <p className="text-sm text-destructive">{error}</p> : null}
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -235,7 +280,12 @@ function AuthPage() {
               <form className="space-y-4" onSubmit={handleReset}>
                 <div className="space-y-2">
                   <Label htmlFor="resetEmail">E-mail cadastrado</Label>
-                  <Input id="resetEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 {error ? <p className="text-sm text-destructive">{error}</p> : null}
                 <Button type="submit" className="w-full" disabled={loading}>

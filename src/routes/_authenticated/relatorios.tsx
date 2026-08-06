@@ -16,9 +16,15 @@ export const Route = createFileRoute("/_authenticated/relatorios")({
   head: () => ({
     meta: [
       { title: "Relatórios — ClinicFlow" },
-      { name: "description", content: "Indicadores operacionais de check-in, espera e conclusão de atendimentos." },
+      {
+        name: "description",
+        content: "Indicadores operacionais de check-in, espera e conclusão de atendimentos.",
+      },
       { property: "og:title", content: "Relatórios — ClinicFlow" },
-      { property: "og:description", content: "Acompanhe os principais indicadores de atendimento da clínica." },
+      {
+        property: "og:description",
+        content: "Acompanhe os principais indicadores de atendimento da clínica.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -94,7 +100,11 @@ function openPdfReadyReport(html: string) {
 
 function ReportsPage() {
   return (
-    <Page title="Relatórios" description="Indicadores operacionais" allowed={["admin", "receptionist", "attendant"]}>
+    <Page
+      title="Relatórios"
+      description="Indicadores operacionais"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => (
         <ReportsContent
           clinicId={profile.clinic_id}
@@ -106,7 +116,15 @@ function ReportsPage() {
   );
 }
 
-function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: string; clinicName: string; clinicLogoUrl: string | null }) {
+function ReportsContent({
+  clinicId,
+  clinicName,
+  clinicLogoUrl,
+}: {
+  clinicId: string;
+  clinicName: string;
+  clinicLogoUrl: string | null;
+}) {
   const [fromDate, setFromDate] = useState(daysAgo(6));
   const [toDate, setToDate] = useState(isoToday());
 
@@ -127,7 +145,10 @@ function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: str
   if (!report) {
     return (
       <div className="card-soft">
-        <EmptyState title="Sem dados" description="Não há dados suficientes para o período selecionado." />
+        <EmptyState
+          title="Sem dados"
+          description="Não há dados suficientes para o período selecionado."
+        />
       </div>
     );
   }
@@ -151,17 +172,29 @@ function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: str
       <div className="grid gap-3 rounded-2xl border p-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="report-from">De</Label>
-          <Input id="report-from" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+          <Input
+            id="report-from"
+            type="date"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="report-to">Até</Label>
-          <Input id="report-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+          <Input
+            id="report-to"
+            type="date"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+          />
         </div>
         <div className="md:col-span-2">
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
-              onClick={() => downloadCsv(`relatorio-operacional-${fromDate}_a_${toDate}.csv`, toCsv(report))}
+              onClick={() =>
+                downloadCsv(`relatorio-operacional-${fromDate}_a_${toDate}.csv`, toCsv(report))
+              }
             >
               Exportar CSV
             </Button>
@@ -185,10 +218,26 @@ function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: str
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Check-ins" value={report.totalCheckins} icon={<Users className="size-5" />} />
-        <StatCard label="Finalizados" value={report.totalFinished} icon={<Activity className="size-5" />} />
-        <StatCard label="Cancelados/No-show" value={report.totalCancelled} icon={<Clock className="size-5" />} />
-        <StatCard label="Espera média" value={`${report.avgWaitMinutes} min`} icon={<Clock className="size-5" />} />
+        <StatCard
+          label="Check-ins"
+          value={report.totalCheckins}
+          icon={<Users className="size-5" />}
+        />
+        <StatCard
+          label="Finalizados"
+          value={report.totalFinished}
+          icon={<Activity className="size-5" />}
+        />
+        <StatCard
+          label="Cancelados/No-show"
+          value={report.totalCancelled}
+          icon={<Clock className="size-5" />}
+        />
+        <StatCard
+          label="Espera média"
+          value={`${report.avgWaitMinutes} min`}
+          icon={<Clock className="size-5" />}
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
@@ -213,7 +262,13 @@ function ReportsContent({ clinicId, clinicName, clinicLogoUrl }: { clinicId: str
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={report.byProfessional}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="professional" interval={0} angle={-15} height={60} textAnchor="end" />
+                <XAxis
+                  dataKey="professional"
+                  interval={0}
+                  angle={-15}
+                  height={60}
+                  textAnchor="end"
+                />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="total" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />

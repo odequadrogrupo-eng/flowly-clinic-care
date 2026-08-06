@@ -20,9 +20,17 @@ export type ReceptionTicket = {
 export async function listReceptionTickets(clinicId: string) {
   const { data, error } = await supabase
     .from("tickets" as never)
-    .select("id, clinic_id, queue_id, patient_id, code, sequence, prefix, priority, priority_reason, status, issued_at, called_at" as never)
+    .select(
+      "id, clinic_id, queue_id, patient_id, code, sequence, prefix, priority, priority_reason, status, issued_at, called_at" as never,
+    )
     .eq("clinic_id", clinicId)
-    .in("status", ["waiting_reception", "called_reception", "waiting_service", "called_service", "in_service"])
+    .in("status", [
+      "waiting_reception",
+      "called_reception",
+      "waiting_service",
+      "called_service",
+      "in_service",
+    ])
     .order("issued_at", { ascending: true });
 
   if (error) throw error;
@@ -39,15 +47,18 @@ export async function callReceptionTicket(clinicId: string, ticketId: string) {
   if (error) throw error;
 }
 
-export async function createPatientFromReception(clinicId: string, input: {
-  full_name: string;
-  cpf?: string;
-  phone?: string;
-  birth_date?: string;
-  email?: string;
-  address?: string;
-  notes?: string;
-}) {
+export async function createPatientFromReception(
+  clinicId: string,
+  input: {
+    full_name: string;
+    cpf?: string;
+    phone?: string;
+    birth_date?: string;
+    email?: string;
+    address?: string;
+    notes?: string;
+  },
+) {
   const payload: PatientFormValues = {
     full_name: input.full_name,
     cpf: input.cpf ?? "",
@@ -72,14 +83,17 @@ export async function attachTicketToPatient(clinicId: string, ticketId: string, 
   if (error) throw error;
 }
 
-export async function sendTicketToService(clinicId: string, input: {
-  ticketId: string;
-  patientId: string;
-  professionalId?: string | null;
-  roomId?: string | null;
-  serviceType?: string | null;
-  notes?: string | null;
-}) {
+export async function sendTicketToService(
+  clinicId: string,
+  input: {
+    ticketId: string;
+    patientId: string;
+    professionalId?: string | null;
+    roomId?: string | null;
+    serviceType?: string | null;
+    notes?: string | null;
+  },
+) {
   const { data: ticketRow, error: ticketReadError } = await supabase
     .from("tickets" as never)
     .select("queue_id, priority" as never)
@@ -90,7 +104,9 @@ export async function sendTicketToService(clinicId: string, input: {
   if (ticketReadError) throw ticketReadError;
 
   const existingQueueId = (ticketRow as { queue_id: string | null } | null)?.queue_id ?? null;
-  const ticketPriority = (ticketRow as { priority: boolean } | null)?.priority ? "priority" : "normal";
+  const ticketPriority = (ticketRow as { priority: boolean } | null)?.priority
+    ? "priority"
+    : "normal";
 
   let queueId = existingQueueId;
 

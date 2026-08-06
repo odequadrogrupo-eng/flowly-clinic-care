@@ -20,18 +20,25 @@ type PrintableReportInput = {
 };
 
 export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
-  const generatedAt = new Date(input.generatedAtIso ?? new Date().toISOString()).toLocaleString("pt-BR");
+  const generatedAt = new Date(input.generatedAtIso ?? new Date().toISOString()).toLocaleString(
+    "pt-BR",
+  );
   const statusRows = input.report.byStatus
-    .map((item) => `<tr><td>${item.status}</td><td style=\"text-align:right\">${item.total}</td></tr>`)
+    .map(
+      (item) => `<tr><td>${item.status}</td><td style="text-align:right">${item.total}</td></tr>`,
+    )
     .join("");
   const professionalRows = input.report.byProfessional
-    .map((item) => `<tr><td>${item.professional}</td><td style=\"text-align:right\">${item.total}</td></tr>`)
+    .map(
+      (item) =>
+        `<tr><td>${item.professional}</td><td style="text-align:right">${item.total}</td></tr>`,
+    )
     .join("");
 
   return `<!doctype html>
 <html>
 <head>
-  <meta charset=\"utf-8\" />
+  <meta charset="utf-8" />
   <title>Relatório Operacional</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
@@ -51,19 +58,19 @@ export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
   </style>
 </head>
 <body>
-  <div class=\"logo-wrap\">${input.logoUrl ? `<img class=\"logo\" src=\"${input.logoUrl}\" alt=\"${input.clinicName}\" />` : ""}</div>
+  <div class="logo-wrap">${input.logoUrl ? `<img class="logo" src="${input.logoUrl}" alt="${input.clinicName}" />` : ""}</div>
   <h1>Relatório Operacional</h1>
   <p><strong>${input.clinicName}</strong></p>
-  <p class=\"meta\">Período: ${input.fromDate} até ${input.toDate} · Gerado em ${generatedAt}</p>
+  <p class="meta">Período: ${input.fromDate} até ${input.toDate} · Gerado em ${generatedAt}</p>
 
-  <section class=\"cards\">
-    <article class=\"card\"><div class=\"label\">Check-ins</div><div class=\"value\">${input.report.totalCheckins}</div></article>
-    <article class=\"card\"><div class=\"label\">Finalizados</div><div class=\"value\">${input.report.totalFinished}</div></article>
-    <article class=\"card\"><div class=\"label\">Cancelados/No-show</div><div class=\"value\">${input.report.totalCancelled}</div></article>
-    <article class=\"card\"><div class=\"label\">Espera média (min)</div><div class=\"value\">${input.report.avgWaitMinutes}</div></article>
+  <section class="cards">
+    <article class="card"><div class="label">Check-ins</div><div class="value">${input.report.totalCheckins}</div></article>
+    <article class="card"><div class="label">Finalizados</div><div class="value">${input.report.totalFinished}</div></article>
+    <article class="card"><div class="label">Cancelados/No-show</div><div class="value">${input.report.totalCancelled}</div></article>
+    <article class="card"><div class="label">Espera média (min)</div><div class="value">${input.report.avgWaitMinutes}</div></article>
   </section>
 
-  <section class=\"section\">
+  <section class="section">
     <h2>Status</h2>
     <table>
       <thead><tr><th>Status</th><th>Total</th></tr></thead>
@@ -71,7 +78,7 @@ export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
     </table>
   </section>
 
-  <section class=\"section\">
+  <section class="section">
     <h2>Top Profissionais</h2>
     <table>
       <thead><tr><th>Profissional</th><th>Total</th></tr></thead>
@@ -102,10 +109,16 @@ export async function getOperationalReport(clinicId: string, fromIso: string, to
 
   const totalCheckins = rows.length;
   const totalFinished = rows.filter((row) => row.status === "finished").length;
-  const totalCancelled = rows.filter((row) => row.status === "cancelled" || row.status === "no_show").length;
+  const totalCancelled = rows.filter(
+    (row) => row.status === "cancelled" || row.status === "no_show",
+  ).length;
 
-  const waits = rows.filter((row) => row.called_at).map((row) => minutesBetween(row.checkin_at, row.called_at));
-  const avgWaitMinutes = waits.length ? Math.round(waits.reduce((sum, value) => sum + value, 0) / waits.length) : 0;
+  const waits = rows
+    .filter((row) => row.called_at)
+    .map((row) => minutesBetween(row.checkin_at, row.called_at));
+  const avgWaitMinutes = waits.length
+    ? Math.round(waits.reduce((sum, value) => sum + value, 0) / waits.length)
+    : 0;
 
   const byStatusMap = new Map<string, number>();
   for (const row of rows) {

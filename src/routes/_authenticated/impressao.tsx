@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getPrintSettings } from "@/services/totem";
-import { buildPrintHtml, printDirect, printWithBrowser, tryPrintWithWebApi } from "@/services/print";
+import {
+  buildPrintHtml,
+  printDirect,
+  printWithBrowser,
+  tryPrintWithWebApi,
+} from "@/services/print";
 
 export const Route = createFileRoute("/_authenticated/impressao")({
   component: PrintPage,
@@ -19,13 +24,31 @@ export const Route = createFileRoute("/_authenticated/impressao")({
 
 function PrintPage() {
   return (
-    <Page title="Impressão térmica" description="Teste e configuração de impressão" allowed={["admin", "receptionist", "attendant"]}>
-      {(profile) => <PrintContent clinicId={profile.clinic_id} clinicName={profile.clinics?.name ?? "Clínica"} logoUrl={profile.clinics?.logo_url ?? null} />}
+    <Page
+      title="Impressão térmica"
+      description="Teste e configuração de impressão"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
+      {(profile) => (
+        <PrintContent
+          clinicId={profile.clinic_id}
+          clinicName={profile.clinics?.name ?? "Clínica"}
+          logoUrl={profile.clinics?.logo_url ?? null}
+        />
+      )}
     </Page>
   );
 }
 
-function PrintContent({ clinicId, clinicName, logoUrl }: { clinicId: string; clinicName: string; logoUrl: string | null }) {
+function PrintContent({
+  clinicId,
+  clinicName,
+  logoUrl,
+}: {
+  clinicId: string;
+  clinicName: string;
+  logoUrl: string | null;
+}) {
   const [ticketCode, setTicketCode] = useState("N-001");
   const settingsQuery = useQuery({
     queryKey: ["print-settings", clinicId],
@@ -94,20 +117,43 @@ function PrintContent({ clinicId, clinicName, logoUrl }: { clinicId: string; cli
       <div className="card-soft grid gap-3 p-4 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
         <div className="space-y-2">
           <Label htmlFor="print-ticket">Senha de teste</Label>
-          <Input id="print-ticket" value={ticketCode} onChange={(event) => setTicketCode(event.target.value)} />
+          <Input
+            id="print-ticket"
+            value={ticketCode}
+            onChange={(event) => setTicketCode(event.target.value)}
+          />
         </div>
-        <Button onClick={() => testMutation.mutate("browser")} disabled={testMutation.isPending}>Imprimir navegador</Button>
-        <Button variant="outline" onClick={() => testMutation.mutate("webusb")} disabled={testMutation.isPending}>Teste WebUSB</Button>
-        <Button variant="outline" onClick={() => testMutation.mutate("webserial")} disabled={testMutation.isPending}>Teste WebSerial</Button>
+        <Button onClick={() => testMutation.mutate("browser")} disabled={testMutation.isPending}>
+          Imprimir navegador
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => testMutation.mutate("webusb")}
+          disabled={testMutation.isPending}
+        >
+          Teste WebUSB
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => testMutation.mutate("webserial")}
+          disabled={testMutation.isPending}
+        >
+          Teste WebSerial
+        </Button>
       </div>
 
       <div className="card-soft p-4">
         <h2 className="font-semibold">Visualização prévia</h2>
-        <iframe title="print-preview" className="mt-3 h-[420px] w-full rounded-xl border" srcDoc={previewHtml} />
+        <iframe
+          title="print-preview"
+          className="mt-3 h-[420px] w-full rounded-xl border"
+          srcDoc={previewHtml}
+        />
       </div>
 
       <div className="card-soft p-4 text-sm text-muted-foreground">
-        Endpoint preparado para futuro Print Agent: {settings?.local_agent_endpoint ?? "http://127.0.0.1:3311/print"}
+        Endpoint preparado para futuro Print Agent:{" "}
+        {settings?.local_agent_endpoint ?? "http://127.0.0.1:3311/print"}
       </div>
     </div>
   );

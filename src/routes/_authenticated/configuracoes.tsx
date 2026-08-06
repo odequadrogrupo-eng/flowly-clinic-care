@@ -8,10 +8,24 @@ import { ClinicLogo } from "@/components/common/ClinicLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { logAudit } from "@/lib/queue";
+import {
+  deleteDoctorRoomShift,
+  inferShiftPeriod,
+  listDoctorRoomShifts,
+  saveDoctorRoomShift,
+} from "@/services/shifts";
 import { updateClinicById, type ClinicFormValues } from "@/services/clinic";
+import { listProfessionals } from "@/services/professionals";
+import { listRooms } from "@/services/rooms";
 import {
   getKioskSettings,
   getPanelSettings,
@@ -30,9 +44,15 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações — ClinicFlow" },
-      { name: "description", content: "Configurações institucionais e preferências operacionais da clínica." },
+      {
+        name: "description",
+        content: "Configurações institucionais e preferências operacionais da clínica.",
+      },
       { property: "og:title", content: "Configurações — ClinicFlow" },
-      { property: "og:description", content: "Gerencie dados da clínica e preferências de chamada." },
+      {
+        property: "og:description",
+        content: "Gerencie dados da clínica e preferências de chamada.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -42,7 +62,13 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 function SettingsPage() {
   return (
     <Page title="Configurações" description="Dados institucionais da clínica" allowed={["admin"]}>
-      {(profile) => <SettingsContent clinicId={profile.clinic_id} profileId={profile.id} initial={profile.clinics} />}
+      {(profile) => (
+        <SettingsContent
+          clinicId={profile.clinic_id}
+          profileId={profile.id}
+          initial={profile.clinics}
+        />
+      )}
     </Page>
   );
 }
@@ -82,6 +108,12 @@ function SettingsContent({
   const [kioskForm, setKioskForm] = useState<KioskSettingsRow | null>(null);
   const [panelForm, setPanelForm] = useState<PanelSettingsRow | null>(null);
   const [printForm, setPrintForm] = useState<PrintSettingsRow | null>(null);
+  const [shiftDate, setShiftDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [shiftProfessionalId, setShiftProfessionalId] = useState("");
+  const [shiftRoomId, setShiftRoomId] = useState("");
+  const [shiftPeriod, setShiftPeriod] = useState("manha");
+  const [shiftStartTime, setShiftStartTime] = useState("08:00");
+  const [shiftEndTime, setShiftEndTime] = useState("12:00");
 
   const kioskQuery = useQuery({
     queryKey: ["kiosk-settings", clinicId],
@@ -96,6 +128,21 @@ function SettingsContent({
   const printQuery = useQuery({
     queryKey: ["print-settings", clinicId],
     queryFn: () => getPrintSettings(clinicId),
+  });
+
+  const professionalsQuery = useQuery({
+    queryKey: ["config-professionals", clinicId],
+    queryFn: () => listProfessionals(clinicId),
+  });
+
+  const roomsQuery = useQuery({
+    queryKey: ["config-rooms", clinicId],
+    queryFn: () => listRooms(clinicId),
+  });
+
+  const shiftsQuery = useQuery({
+    queryKey: ["doctor-room-shifts", clinicId, shiftDate],
+    queryFn: () => listDoctorRoomShifts(clinicId, shiftDate),
   });
 
   useEffect(() => {
@@ -174,12 +221,64 @@ function SettingsContent({
     onError: (error: Error) => toast.error("Erro na impressão", { description: error.message }),
   });
 
+  const saveShiftMutation = useMutation({
+    mutationFn: async () => {
+      if (!shiftProfessionalId || !shiftRoomId) {
+        throw new Error("Selecione médico e sala para registrar a escala.");
+      }
+
+      await saveDoctorRoomShift({
+        clinicId,
+        professionalId: shiftProfessionalId,
+        roomId: shiftRoomId,
+        shiftDate,
+        startTime: shiftStartTime,
+        endTime: shiftEndTime,
+      });
+
+      await logAudit({
+        clinicId,
+        action: "create",
+        entity: "doctor_room_shifts",
+        details: {
+          shiftDate,
+          professionalId: shiftProfessionalId,
+          roomId: shiftRoomId,
+          startTime: shiftStartTime,
+          endTime: shiftEndTime,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Escala registrada");
+      queryClient.invalidateQueries({ queryKey: ["doctor-room-shifts", clinicId, shiftDate] });
+    },
+    onError: (error: Error) => toast.error("Erro na escala", { description: error.message }),
+  });
+
+  const deleteShiftMutation = useMutation({
+    mutationFn: async (shiftId: string) => {
+      await deleteDoctorRoomShift(clinicId, shiftId);
+      await logAudit({ clinicId, action: "delete", entity: "doctor_room_shifts", entityId: shiftId });
+    },
+    onSuccess: () => {
+      toast.success("Escala removida");
+      queryClient.invalidateQueries({ queryKey: ["doctor-room-shifts", clinicId, shiftDate] });
+    },
+    onError: (error: Error) => toast.error("Erro ao remover escala", { description: error.message }),
+  });
+
   const regenerateKioskMutation = useMutation({
     mutationFn: () => regenerateKioskToken(clinicId),
     onSuccess: async (token) => {
       toast.success("Token do totem regenerado");
       setKioskForm((prev) => (prev ? { ...prev, public_token: token } : prev));
-      await logAudit({ clinicId, action: "regenerate_token", entity: "kiosk_settings", entityId: clinicId });
+      await logAudit({
+        clinicId,
+        action: "regenerate_token",
+        entity: "kiosk_settings",
+        entityId: clinicId,
+      });
     },
   });
 
@@ -188,9 +287,29 @@ function SettingsContent({
     onSuccess: async (token) => {
       toast.success("Token do painel regenerado");
       setPanelForm((prev) => (prev ? { ...prev, public_token: token } : prev));
-      await logAudit({ clinicId, action: "regenerate_token", entity: "panel_settings", entityId: clinicId });
+      await logAudit({
+        clinicId,
+        action: "regenerate_token",
+        entity: "panel_settings",
+        entityId: clinicId,
+      });
     },
   });
+
+  useEffect(() => {
+    if (shiftPeriod === "manha") {
+      setShiftStartTime("08:00");
+      setShiftEndTime("12:00");
+      return;
+    }
+    if (shiftPeriod === "tarde") {
+      setShiftStartTime("13:00");
+      setShiftEndTime("18:00");
+      return;
+    }
+    setShiftStartTime("18:00");
+    setShiftEndTime("22:00");
+  }, [shiftPeriod]);
 
   return (
     <div className="space-y-4">
@@ -198,80 +317,84 @@ function SettingsContent({
         <h2 className="font-semibold">Cadastro da clínica</h2>
         <p className="text-sm text-muted-foreground">Esses dados são usados em todo o sistema.</p>
 
-      <div className="mt-4">
-        <ClinicLogo
-          src={form.logo_url || "/brands/club-medico/logo.png"}
-          alt={form.name || "Club Médico"}
-          fallbackText="Club Médico"
-          className="h-16 w-44"
-          imgClassName="h-12"
-        />
-      </div>
+        <div className="mt-4">
+          <ClinicLogo
+            src={form.logo_url || "/brands/club-medico/logo.png"}
+            alt={form.name || "Club Médico"}
+            fallbackText="Club Médico"
+            className="h-16 w-44"
+            imgClassName="h-12"
+          />
+        </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="cfg-name">Nome fantasia</Label>
-          <Input id="cfg-name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="cfg-name">Nome fantasia</Label>
+            <Input
+              id="cfg-name"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-legal">Razão social</Label>
+            <Input
+              id="cfg-legal"
+              value={form.legal_name}
+              onChange={(event) => setForm({ ...form, legal_name: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-doc">Documento</Label>
+            <Input
+              id="cfg-doc"
+              value={form.document}
+              onChange={(event) => setForm({ ...form, document: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-phone">Telefone</Label>
+            <Input
+              id="cfg-phone"
+              value={form.phone}
+              onChange={(event) => setForm({ ...form, phone: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="cfg-email">E-mail</Label>
+            <Input
+              id="cfg-email"
+              type="email"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="cfg-address">Endereço</Label>
+            <Textarea
+              id="cfg-address"
+              rows={2}
+              value={form.address}
+              onChange={(event) => setForm({ ...form, address: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-hours">Horário de funcionamento</Label>
+            <Input
+              id="cfg-hours"
+              value={form.opening_hours}
+              onChange={(event) => setForm({ ...form, opening_hours: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cfg-logo">URL do logo</Label>
+            <Input
+              id="cfg-logo"
+              value={form.logo_url}
+              onChange={(event) => setForm({ ...form, logo_url: event.target.value })}
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-legal">Razão social</Label>
-          <Input
-            id="cfg-legal"
-            value={form.legal_name}
-            onChange={(event) => setForm({ ...form, legal_name: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-doc">Documento</Label>
-          <Input
-            id="cfg-doc"
-            value={form.document}
-            onChange={(event) => setForm({ ...form, document: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-phone">Telefone</Label>
-          <Input
-            id="cfg-phone"
-            value={form.phone}
-            onChange={(event) => setForm({ ...form, phone: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="cfg-email">E-mail</Label>
-          <Input
-            id="cfg-email"
-            type="email"
-            value={form.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="cfg-address">Endereço</Label>
-          <Textarea
-            id="cfg-address"
-            rows={2}
-            value={form.address}
-            onChange={(event) => setForm({ ...form, address: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-hours">Horário de funcionamento</Label>
-          <Input
-            id="cfg-hours"
-            value={form.opening_hours}
-            onChange={(event) => setForm({ ...form, opening_hours: event.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cfg-logo">URL do logo</Label>
-          <Input
-            id="cfg-logo"
-            value={form.logo_url}
-            onChange={(event) => setForm({ ...form, logo_url: event.target.value })}
-          />
-        </div>
-      </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <label className="flex items-center gap-2 text-sm">
@@ -293,38 +416,90 @@ function SettingsContent({
           <h2 className="font-semibold">Totem</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={kioskForm.enabled} onChange={(e) => setKioskForm({ ...kioskForm, enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={kioskForm.enabled}
+                onChange={(e) => setKioskForm({ ...kioskForm, enabled: e.target.checked })}
+              />
               Totem ativo
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={kioskForm.kiosk_mode} onChange={(e) => setKioskForm({ ...kioskForm, kiosk_mode: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={kioskForm.kiosk_mode}
+                onChange={(e) => setKioskForm({ ...kioskForm, kiosk_mode: e.target.checked })}
+              />
               Modo kiosk/tela cheia
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={kioskForm.allow_normal} onChange={(e) => setKioskForm({ ...kioskForm, allow_normal: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={kioskForm.allow_normal}
+                onChange={(e) => setKioskForm({ ...kioskForm, allow_normal: e.target.checked })}
+              />
               Permitir atendimento normal
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={kioskForm.allow_priority} onChange={(e) => setKioskForm({ ...kioskForm, allow_priority: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={kioskForm.allow_priority}
+                onChange={(e) => setKioskForm({ ...kioskForm, allow_priority: e.target.checked })}
+              />
               Permitir atendimento preferencial
             </label>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <Input value={kioskForm.normal_prefix} onChange={(e) => setKioskForm({ ...kioskForm, normal_prefix: e.target.value.toUpperCase() })} placeholder="Prefixo normal" />
-            <Input value={kioskForm.priority_prefix} onChange={(e) => setKioskForm({ ...kioskForm, priority_prefix: e.target.value.toUpperCase() })} placeholder="Prefixo preferencial" />
-            <Textarea value={kioskForm.custom_text ?? ""} onChange={(e) => setKioskForm({ ...kioskForm, custom_text: e.target.value })} placeholder="Texto personalizado" />
-            <Textarea value={kioskForm.footer_text ?? ""} onChange={(e) => setKioskForm({ ...kioskForm, footer_text: e.target.value })} placeholder="Mensagem de rodapé" />
+            <Input
+              value={kioskForm.normal_prefix}
+              onChange={(e) =>
+                setKioskForm({ ...kioskForm, normal_prefix: e.target.value.toUpperCase() })
+              }
+              placeholder="Prefixo normal"
+            />
+            <Input
+              value={kioskForm.priority_prefix}
+              onChange={(e) =>
+                setKioskForm({ ...kioskForm, priority_prefix: e.target.value.toUpperCase() })
+              }
+              placeholder="Prefixo preferencial"
+            />
+            <Textarea
+              value={kioskForm.custom_text ?? ""}
+              onChange={(e) => setKioskForm({ ...kioskForm, custom_text: e.target.value })}
+              placeholder="Texto personalizado"
+            />
+            <Textarea
+              value={kioskForm.footer_text ?? ""}
+              onChange={(e) => setKioskForm({ ...kioskForm, footer_text: e.target.value })}
+              placeholder="Mensagem de rodapé"
+            />
           </div>
           <div className="mt-4 rounded-xl border p-3">
             <p className="text-xs text-muted-foreground">URL pública do totem</p>
             <div className="mt-1 flex gap-2">
               <Input value={kioskPublicUrl} readOnly />
-              <Button variant="outline" onClick={() => navigator.clipboard.writeText(kioskPublicUrl)}>Copiar</Button>
-              <Button variant="outline" onClick={() => regenerateKioskMutation.mutate()} disabled={regenerateKioskMutation.isPending}>Regenerar</Button>
+              <Button
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(kioskPublicUrl)}
+              >
+                Copiar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => regenerateKioskMutation.mutate()}
+                disabled={regenerateKioskMutation.isPending}
+              >
+                Regenerar
+              </Button>
             </div>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => saveKioskMutation.mutate()} disabled={saveKioskMutation.isPending}>Salvar totem</Button>
+            <Button
+              onClick={() => saveKioskMutation.mutate()}
+              disabled={saveKioskMutation.isPending}
+            >
+              Salvar totem
+            </Button>
           </div>
         </section>
       ) : null}
@@ -333,35 +508,72 @@ function SettingsContent({
         <section className="card-soft p-5">
           <h2 className="font-semibold">Painel de TV</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <Input value={panelForm.name} onChange={(e) => setPanelForm({ ...panelForm, name: e.target.value })} placeholder="Nome do painel" />
+            <Input
+              value={panelForm.name}
+              onChange={(e) => setPanelForm({ ...panelForm, name: e.target.value })}
+              placeholder="Nome do painel"
+            />
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.enabled} onChange={(e) => setPanelForm({ ...panelForm, enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.enabled}
+                onChange={(e) => setPanelForm({ ...panelForm, enabled: e.target.checked })}
+              />
               Painel ativo
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.full_screen} onChange={(e) => setPanelForm({ ...panelForm, full_screen: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.full_screen}
+                onChange={(e) => setPanelForm({ ...panelForm, full_screen: e.target.checked })}
+              />
               Tela cheia
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.show_clock} onChange={(e) => setPanelForm({ ...panelForm, show_clock: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.show_clock}
+                onChange={(e) => setPanelForm({ ...panelForm, show_clock: e.target.checked })}
+              />
               Exibir relógio
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.show_latest_calls} onChange={(e) => setPanelForm({ ...panelForm, show_latest_calls: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.show_latest_calls}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, show_latest_calls: e.target.checked })
+                }
+              />
               Exibir últimas chamadas
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.sound_enabled} onChange={(e) => setPanelForm({ ...panelForm, sound_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.sound_enabled}
+                onChange={(e) => setPanelForm({ ...panelForm, sound_enabled: e.target.checked })}
+              />
               Aviso sonoro
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={panelForm.voice_enabled} onChange={(e) => setPanelForm({ ...panelForm, voice_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={panelForm.voice_enabled}
+                onChange={(e) => setPanelForm({ ...panelForm, voice_enabled: e.target.checked })}
+              />
               Voz ativa
             </label>
             <div className="space-y-2">
               <Label>Privacidade de exibição</Label>
-              <Select value={panelForm.show_mode} onValueChange={(value: PanelSettingsRow["show_mode"]) => setPanelForm({ ...panelForm, show_mode: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={panelForm.show_mode}
+                onValueChange={(value: PanelSettingsRow["show_mode"]) =>
+                  setPanelForm({ ...panelForm, show_mode: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ticket_only">Somente senha</SelectItem>
                   <SelectItem value="first_name">Primeiro nome</SelectItem>
@@ -371,46 +583,219 @@ function SettingsContent({
             </div>
             <div className="space-y-2">
               <Label>Template de voz</Label>
-              <Input value={panelForm.phrase_template} onChange={(e) => setPanelForm({ ...panelForm, phrase_template: e.target.value })} />
+              <Input
+                value={panelForm.phrase_template}
+                onChange={(e) => setPanelForm({ ...panelForm, phrase_template: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Volume (0 a 1)</Label>
-              <Input type="number" min="0" max="1" step="0.05" value={panelForm.voice_volume} onChange={(e) => setPanelForm({ ...panelForm, voice_volume: Number(e.target.value) || 0 })} />
+              <Input
+                type="number"
+                min="0"
+                max="1"
+                step="0.05"
+                value={panelForm.voice_volume}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, voice_volume: Number(e.target.value) || 0 })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Velocidade</Label>
-              <Input type="number" min="0.5" max="2" step="0.05" value={panelForm.voice_rate} onChange={(e) => setPanelForm({ ...panelForm, voice_rate: Number(e.target.value) || 1 })} />
+              <Input
+                type="number"
+                min="0.5"
+                max="2"
+                step="0.05"
+                value={panelForm.voice_rate}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, voice_rate: Number(e.target.value) || 1 })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Tom</Label>
-              <Input type="number" min="0" max="2" step="0.05" value={panelForm.voice_pitch} onChange={(e) => setPanelForm({ ...panelForm, voice_pitch: Number(e.target.value) || 1 })} />
+              <Input
+                type="number"
+                min="0"
+                max="2"
+                step="0.05"
+                value={panelForm.voice_pitch}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, voice_pitch: Number(e.target.value) || 1 })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Repetições</Label>
-              <Input type="number" min="1" max="5" step="1" value={panelForm.voice_repeat_count} onChange={(e) => setPanelForm({ ...panelForm, voice_repeat_count: Number(e.target.value) || 1 })} />
+              <Input
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value={panelForm.voice_repeat_count}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, voice_repeat_count: Number(e.target.value) || 1 })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Intervalo entre repetições (s)</Label>
-              <Input type="number" min="1" max="10" step="1" value={panelForm.voice_repeat_interval_seconds} onChange={(e) => setPanelForm({ ...panelForm, voice_repeat_interval_seconds: Number(e.target.value) || 1 })} />
+              <Input
+                type="number"
+                min="1"
+                max="10"
+                step="1"
+                value={panelForm.voice_repeat_interval_seconds}
+                onChange={(e) =>
+                  setPanelForm({
+                    ...panelForm,
+                    voice_repeat_interval_seconds: Number(e.target.value) || 1,
+                  })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Qtd. de últimas chamadas</Label>
-              <Input type="number" min="1" max="20" step="1" value={panelForm.latest_calls_limit} onChange={(e) => setPanelForm({ ...panelForm, latest_calls_limit: Number(e.target.value) || 5 })} />
+              <Input
+                type="number"
+                min="1"
+                max="20"
+                step="1"
+                value={panelForm.latest_calls_limit}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, latest_calls_limit: Number(e.target.value) || 5 })
+                }
+              />
             </div>
           </div>
           <div className="mt-4 rounded-xl border p-3">
             <p className="text-xs text-muted-foreground">URL pública do painel</p>
             <div className="mt-1 flex gap-2">
               <Input value={panelPublicUrl} readOnly />
-              <Button variant="outline" onClick={() => navigator.clipboard.writeText(panelPublicUrl)}>Copiar</Button>
-              <Button variant="outline" onClick={() => regeneratePanelMutation.mutate()} disabled={regeneratePanelMutation.isPending}>Regenerar</Button>
+              <Button
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(panelPublicUrl)}
+              >
+                Copiar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => regeneratePanelMutation.mutate()}
+                disabled={regeneratePanelMutation.isPending}
+              >
+                Regenerar
+              </Button>
             </div>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => savePanelMutation.mutate()} disabled={savePanelMutation.isPending}>Salvar painel</Button>
+            <Button
+              onClick={() => savePanelMutation.mutate()}
+              disabled={savePanelMutation.isPending}
+            >
+              Salvar painel
+            </Button>
           </div>
         </section>
       ) : null}
+
+      <section className="card-soft p-5">
+        <h2 className="font-semibold">Escala médico x sala</h2>
+        <p className="text-sm text-muted-foreground">
+          Configure por data, turno e horário. Conflitos de médico ou sala no mesmo período são bloqueados.
+        </p>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Data</Label>
+            <Input type="date" value={shiftDate} onChange={(e) => setShiftDate(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Turno</Label>
+            <Select value={shiftPeriod} onValueChange={setShiftPeriod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manha">Manhã</SelectItem>
+                <SelectItem value="tarde">Tarde</SelectItem>
+                <SelectItem value="noite">Noite</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Médico</Label>
+            <Select value={shiftProfessionalId} onValueChange={setShiftProfessionalId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o médico" />
+              </SelectTrigger>
+              <SelectContent>
+                {(professionalsQuery.data ?? []).map((professional) => (
+                  <SelectItem key={professional.id} value={professional.id}>
+                    {professional.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Sala</Label>
+            <Select value={shiftRoomId} onValueChange={setShiftRoomId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a sala" />
+              </SelectTrigger>
+              <SelectContent>
+                {(roomsQuery.data ?? []).map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    {room.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Início</Label>
+            <Input type="time" value={shiftStartTime} onChange={(e) => setShiftStartTime(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Fim</Label>
+            <Input type="time" value={shiftEndTime} onChange={(e) => setShiftEndTime(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <Button onClick={() => saveShiftMutation.mutate()} disabled={saveShiftMutation.isPending}>
+            {saveShiftMutation.isPending ? "Salvando..." : "Registrar escala"}
+          </Button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {(shiftsQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma escala registrada para esta data.</p>
+          ) : (
+            (shiftsQuery.data ?? []).map((shift) => (
+              <div key={shift.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+                <div>
+                  <p className="font-medium">
+                    {shift.professionals?.full_name ?? "Médico"} · {shift.rooms?.name ?? "Sala"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {inferShiftPeriod(shift.start_time)} · {shift.start_time.slice(0, 5)} às {shift.end_time.slice(0, 5)}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => deleteShiftMutation.mutate(shift.id)}
+                  disabled={deleteShiftMutation.isPending}
+                >
+                  Remover
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
       {printForm ? (
         <section className="card-soft p-5">
@@ -418,36 +803,80 @@ function SettingsContent({
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Papel</Label>
-              <Select value={printForm.paper_size} onValueChange={(value: PrintSettingsRow["paper_size"]) => setPrintForm({ ...printForm, paper_size: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={printForm.paper_size}
+                onValueChange={(value: PrintSettingsRow["paper_size"]) =>
+                  setPrintForm({ ...printForm, paper_size: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="58mm">58 mm</SelectItem>
                   <SelectItem value="80mm">80 mm</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <Input value={printForm.local_agent_endpoint} onChange={(e) => setPrintForm({ ...printForm, local_agent_endpoint: e.target.value })} placeholder="Endpoint local do Print Agent" />
-            <Input value={printForm.welcome_message} onChange={(e) => setPrintForm({ ...printForm, welcome_message: e.target.value })} placeholder="Mensagem de boas-vindas" />
-            <Input value={printForm.footer_message} onChange={(e) => setPrintForm({ ...printForm, footer_message: e.target.value })} placeholder="Mensagem de rodapé" />
+            <Input
+              value={printForm.local_agent_endpoint}
+              onChange={(e) => setPrintForm({ ...printForm, local_agent_endpoint: e.target.value })}
+              placeholder="Endpoint local do Print Agent"
+            />
+            <Input
+              value={printForm.welcome_message}
+              onChange={(e) => setPrintForm({ ...printForm, welcome_message: e.target.value })}
+              placeholder="Mensagem de boas-vindas"
+            />
+            <Input
+              value={printForm.footer_message}
+              onChange={(e) => setPrintForm({ ...printForm, footer_message: e.target.value })}
+              placeholder="Mensagem de rodapé"
+            />
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={printForm.qr_enabled} onChange={(e) => setPrintForm({ ...printForm, qr_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={printForm.qr_enabled}
+                onChange={(e) => setPrintForm({ ...printForm, qr_enabled: e.target.checked })}
+              />
               QR Code
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={printForm.browser_fallback_enabled} onChange={(e) => setPrintForm({ ...printForm, browser_fallback_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={printForm.browser_fallback_enabled}
+                onChange={(e) =>
+                  setPrintForm({ ...printForm, browser_fallback_enabled: e.target.checked })
+                }
+              />
               Fallback navegador
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={printForm.webusb_enabled} onChange={(e) => setPrintForm({ ...printForm, webusb_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={printForm.webusb_enabled}
+                onChange={(e) => setPrintForm({ ...printForm, webusb_enabled: e.target.checked })}
+              />
               WebUSB
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={printForm.webserial_enabled} onChange={(e) => setPrintForm({ ...printForm, webserial_enabled: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={printForm.webserial_enabled}
+                onChange={(e) =>
+                  setPrintForm({ ...printForm, webserial_enabled: e.target.checked })
+                }
+              />
               WebSerial
             </label>
           </div>
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => savePrintMutation.mutate()} disabled={savePrintMutation.isPending}>Salvar impressão</Button>
+            <Button
+              onClick={() => savePrintMutation.mutate()}
+              disabled={savePrintMutation.isPending}
+            >
+              Salvar impressão
+            </Button>
           </div>
         </section>
       ) : null}

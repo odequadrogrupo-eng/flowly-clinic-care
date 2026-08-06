@@ -17,10 +17,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { canManage, type AppRole } from "@/hooks/useAuth";
 import { logAudit } from "@/lib/queue";
@@ -42,7 +54,10 @@ export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({
     meta: [
       { title: "Agenda — ClinicFlow" },
-      { name: "description", content: "Agenda da clinica com agendamentos por paciente, profissional e sala." },
+      {
+        name: "description",
+        content: "Agenda da clinica com agendamentos por paciente, profissional e sala.",
+      },
       { property: "og:title", content: "Agenda — ClinicFlow" },
       { property: "og:description", content: "Gestao de agendamentos no ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -101,13 +116,27 @@ function emptyForm(day: string): AppointmentFormValues {
 
 function AgendaPage() {
   return (
-    <Page title="Agenda" description="Agendamentos por dia" allowed={["admin", "receptionist", "attendant", "professional"]}>
-      {(profile) => <AgendaContent clinicId={profile.clinic_id} role={profile.role} profileId={profile.id} />}
+    <Page
+      title="Agenda"
+      description="Agendamentos por dia"
+      allowed={["admin", "receptionist", "attendant", "professional"]}
+    >
+      {(profile) => (
+        <AgendaContent clinicId={profile.clinic_id} role={profile.role} profileId={profile.id} />
+      )}
     </Page>
   );
 }
 
-function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: AppRole; profileId: string }) {
+function AgendaContent({
+  clinicId,
+  role,
+  profileId,
+}: {
+  clinicId: string;
+  role: AppRole;
+  profileId: string;
+}) {
   const queryClient = useQueryClient();
   const manager = canManage(role);
   const [day, setDay] = useState(todayIsoDate());
@@ -134,7 +163,9 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
 
   const scopedProfessionalId = useMemo(() => {
     if (manager) return professionalFilter === NONE ? null : professionalFilter;
-    const mine = (professionalsQuery.data ?? []).find((professional) => professional.profile_id === profileId);
+    const mine = (professionalsQuery.data ?? []).find(
+      (professional) => professional.profile_id === profileId,
+    );
     return mine?.id ?? "__no_professional_link__";
   }, [manager, professionalFilter, professionalsQuery.data, profileId]);
 
@@ -167,7 +198,12 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
   const cancelMutation = useMutation({
     mutationFn: async (appointment: AppointmentRow) => {
       await cancelAppointment(clinicId, appointment.id);
-      await logAudit({ clinicId, action: "cancel", entity: "appointments", entityId: appointment.id });
+      await logAudit({
+        clinicId,
+        action: "cancel",
+        entity: "appointments",
+        entityId: appointment.id,
+      });
     },
     onSuccess: () => {
       toast.success("Agendamento cancelado");
@@ -178,7 +214,10 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
     },
   });
 
-  const loading = professionalsQuery.isLoading || appointmentsQuery.isLoading || (manager && (patientsQuery.isLoading || roomsQuery.isLoading));
+  const loading =
+    professionalsQuery.isLoading ||
+    appointmentsQuery.isLoading ||
+    (manager && (patientsQuery.isLoading || roomsQuery.isLoading));
 
   if (loading) return <LoadingState label="Carregando agenda..." />;
   if (professionalsQuery.error) return <ErrorState error={professionalsQuery.error} />;
@@ -197,7 +236,12 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="agenda-day">Dia</Label>
-            <Input id="agenda-day" type="date" value={day} onChange={(event) => setDay(event.target.value)} />
+            <Input
+              id="agenda-day"
+              type="date"
+              value={day}
+              onChange={(event) => setDay(event.target.value)}
+            />
           </div>
 
           {manager ? (
@@ -231,7 +275,11 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
         <div className="card-soft">
           <EmptyState
             title="Sem agendamentos"
-            description={manager ? "Cadastre um novo horario para este dia." : "Nenhum horario vinculado para este dia."}
+            description={
+              manager
+                ? "Cadastre um novo horario para este dia."
+                : "Nenhum horario vinculado para este dia."
+            }
           />
         </div>
       ) : (
@@ -246,7 +294,9 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
                     {appointment.rooms ? ` · Sala ${appointment.rooms.name}` : ""}
                   </p>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[appointment.status]}`}>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[appointment.status]}`}
+                >
                   {appointmentStatusLabel[appointment.status]}
                 </span>
               </div>
@@ -283,7 +333,9 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
                     size="sm"
                     variant="ghost"
                     onClick={() => setCancelling(appointment)}
-                    disabled={appointment.status === "cancelled" || appointment.status === "finished"}
+                    disabled={
+                      appointment.status === "cancelled" || appointment.status === "finished"
+                    }
                   >
                     <XCircle className="size-4" /> Cancelar
                   </Button>
@@ -304,7 +356,10 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Paciente</Label>
-                <Select value={form.patient_id} onValueChange={(value) => setForm({ ...form, patient_id: value })}>
+                <Select
+                  value={form.patient_id}
+                  onValueChange={(value) => setForm({ ...form, patient_id: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -341,7 +396,10 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
 
                 <div className="space-y-2">
                   <Label>Sala</Label>
-                  <Select value={form.room_id} onValueChange={(value) => setForm({ ...form, room_id: value })}>
+                  <Select
+                    value={form.room_id}
+                    onValueChange={(value) => setForm({ ...form, room_id: value })}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -386,7 +444,9 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
                 <Label>Status</Label>
                 <Select
                   value={form.status}
-                  onValueChange={(value) => setForm({ ...form, status: value as AppointmentStatus })}
+                  onValueChange={(value) =>
+                    setForm({ ...form, status: value as AppointmentStatus })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -429,7 +489,10 @@ function AgendaContent({ clinicId, role, profileId }: { clinicId: string; role: 
             <Button variant="ghost" onClick={() => setForm(null)}>
               Cancelar
             </Button>
-            <Button disabled={saveMutation.isPending} onClick={() => form && saveMutation.mutate(form)}>
+            <Button
+              disabled={saveMutation.isPending}
+              onClick={() => form && saveMutation.mutate(form)}
+            >
               Salvar
             </Button>
           </DialogFooter>

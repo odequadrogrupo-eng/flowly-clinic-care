@@ -27,7 +27,8 @@ function KioskPage() {
   });
 
   const issueMutation = useMutation({
-    mutationFn: async (priority: boolean) => issueTicketByToken(token, { priority, priorityReason }),
+    mutationFn: async (priority: boolean) =>
+      issueTicketByToken(token, { priority, priorityReason }),
     onSuccess: (data) => {
       if (!data.ok || !data.ticket_code) return;
       setIssuedCode(data.ticket_code);
@@ -70,7 +71,9 @@ function KioskPage() {
 
   const config = configQuery.data;
   if (!config?.ok) {
-    return <main className="grid min-h-screen place-items-center">Totem indisponível no momento.</main>;
+    return (
+      <main className="grid min-h-screen place-items-center">Totem indisponível no momento.</main>
+    );
   }
 
   return (
@@ -84,7 +87,9 @@ function KioskPage() {
           imgClassName="h-12"
         />
         <h1 className="text-2xl font-bold">{config.clinic_name}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{config.custom_text || "Selecione o tipo de atendimento"}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {config.custom_text || "Selecione o tipo de atendimento"}
+        </p>
 
         {issuedCode ? (
           <div className="mt-6 w-full rounded-2xl border bg-primary/5 p-6">
@@ -125,7 +130,9 @@ function KioskPage() {
           </div>
         )}
 
-        {config.footer_text ? <p className="mt-6 text-xs text-muted-foreground">{config.footer_text}</p> : null}
+        {config.footer_text ? (
+          <p className="mt-6 text-xs text-muted-foreground">{config.footer_text}</p>
+        ) : null}
       </div>
     </main>
   );

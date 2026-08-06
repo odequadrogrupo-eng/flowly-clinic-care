@@ -37,7 +37,8 @@ function ResetPassword() {
       await updateCurrentUserPassword({ password, confirmPassword: confirm });
       await clearTemporaryPasswordFlag();
     } catch (authError) {
-      handledError = authError instanceof Error ? authError.message : "Nao foi possivel atualizar a senha.";
+      handledError =
+        authError instanceof Error ? authError.message : "Nao foi possivel atualizar a senha.";
     }
     setLoading(false);
     if (handledError) {
@@ -55,15 +56,27 @@ function ResetPassword() {
         <form className="card-soft mt-6 space-y-4 p-6" onSubmit={handleSubmit}>
           <div>
             <h1 className="text-lg font-semibold">Definir nova senha</h1>
-            <p className="text-sm text-muted-foreground">Use o link recebido por e-mail para concluir.</p>
+            <p className="text-sm text-muted-foreground">
+              Use o link recebido por e-mail para concluir.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="newPassword">Nova senha</Label>
-            <Input id="newPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="newPassword"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar senha</Label>
-            <Input id="confirmPassword" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={loading}>

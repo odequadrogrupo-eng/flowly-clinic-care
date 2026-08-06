@@ -205,21 +205,19 @@ async function main() {
       if (updateUserError) throw updateUserError;
     }
 
-    const { error: profileError } = await supabase
-      .from("profiles" as never)
-      .upsert(
-        {
-          id: userId,
-          clinic_id: clinicId,
-          full_name: demoUser.name,
-          email,
-          role: demoUser.role,
-          active: true,
-          force_password_change: true,
-          temp_password_issued_at: new Date().toISOString(),
-        } as never,
-        { onConflict: "id" },
-      );
+    const { error: profileError } = await supabase.from("profiles" as never).upsert(
+      {
+        id: userId,
+        clinic_id: clinicId,
+        full_name: demoUser.name,
+        email,
+        role: demoUser.role,
+        active: true,
+        force_password_change: true,
+        temp_password_issued_at: new Date().toISOString(),
+      } as never,
+      { onConflict: "id" },
+    );
     if (profileError) throw profileError;
 
     createdOrUpdatedUsers.push({ id: userId, email, role: demoUser.role });
@@ -238,18 +236,16 @@ async function main() {
 
     const receptionId = (receptionData as { id: string } | null)?.id ?? null;
 
-    const { error: attendantError } = await supabase
-      .from("attendants" as never)
-      .upsert(
-        {
-          clinic_id: clinicId,
-          profile_id: attendantProfile.id,
-          reception_id: receptionId,
-          display_name: "Marcos Oliveira",
-          active: true,
-        } as never,
-        { onConflict: "clinic_id,profile_id" },
-      );
+    const { error: attendantError } = await supabase.from("attendants" as never).upsert(
+      {
+        clinic_id: clinicId,
+        profile_id: attendantProfile.id,
+        reception_id: receptionId,
+        display_name: "Marcos Oliveira",
+        active: true,
+      } as never,
+      { onConflict: "clinic_id,profile_id" },
+    );
     if (attendantError) throw attendantError;
   }
 
@@ -297,24 +293,32 @@ async function main() {
 
       if ((existing ?? []).length > 0) continue;
 
-      const { error: auditError } = await supabase
-        .from("audit_logs")
-        .insert({
-          clinic_id: clinicId,
-          user_id: adminId,
-          action,
-          entity: "seed_demo",
-          details: { seed_key: seedKey, source: "scripts/seed-club-medico.ts" },
-        });
+      const { error: auditError } = await supabase.from("audit_logs").insert({
+        clinic_id: clinicId,
+        user_id: adminId,
+        action,
+        entity: "seed_demo",
+        details: { seed_key: seedKey, source: "scripts/seed-club-medico.ts" },
+      });
       if (auditError) throw auditError;
     }
   }
 
-  const [{ count: patientsCount }, { count: queuesCount }, { count: ticketsCount }] = await Promise.all([
-    supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
-    supabase.from("queues").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
-    supabase.from("tickets" as never).select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
-  ]);
+  const [{ count: patientsCount }, { count: queuesCount }, { count: ticketsCount }] =
+    await Promise.all([
+      supabase
+        .from("patients")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", clinicId),
+      supabase
+        .from("queues")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", clinicId),
+      supabase
+        .from("tickets" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", clinicId),
+    ]);
 
   const { data: kioskTokenData } = await supabase
     .from("kiosk_settings" as never)

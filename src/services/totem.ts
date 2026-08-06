@@ -32,17 +32,26 @@ export type IssuedTicket = {
 };
 
 export async function getKioskPublicConfig(token: string): Promise<KioskPublicConfig> {
-  const { data, error } = await supabase.rpc("get_kiosk_public_config" as never, { _token: token } as never);
+  const { data, error } = await supabase.rpc(
+    "get_kiosk_public_config" as never,
+    { _token: token } as never,
+  );
   if (error) throw error;
   return data as KioskPublicConfig;
 }
 
-export async function issueTicketByToken(token: string, input: { priority: boolean; priorityReason?: string }) {
-  const { data, error } = await supabase.rpc("issue_ticket_by_token" as never, {
-    _token: token,
-    _priority: input.priority,
-    _priority_reason: input.priorityReason ?? null,
-  } as never);
+export async function issueTicketByToken(
+  token: string,
+  input: { priority: boolean; priorityReason?: string },
+) {
+  const { data, error } = await supabase.rpc(
+    "issue_ticket_by_token" as never,
+    {
+      _token: token,
+      _priority: input.priority,
+      _priority_reason: input.priorityReason ?? null,
+    } as never,
+  );
   if (error) throw error;
   return data as IssuedTicket;
 }
@@ -102,7 +111,9 @@ export type PrintSettingsRow = {
 export async function getKioskSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("kiosk_settings" as never)
-    .select("clinic_id, enabled, public_token, allow_normal, allow_priority, normal_prefix, priority_prefix, custom_text, footer_text, logo_url, paper_size, print_auto, qr_enabled, priority_help_text, kiosk_mode" as never)
+    .select(
+      "clinic_id, enabled, public_token, allow_normal, allow_priority, normal_prefix, priority_prefix, custom_text, footer_text, logo_url, paper_size, print_auto, qr_enabled, priority_help_text, kiosk_mode" as never,
+    )
     .eq("clinic_id", clinicId)
     .single();
   if (error) throw error;
@@ -110,7 +121,10 @@ export async function getKioskSettings(clinicId: string) {
 }
 
 export async function updateKioskSettings(clinicId: string, input: Partial<KioskSettingsRow>) {
-  const { error } = await supabase.from("kiosk_settings" as never).update(input as never).eq("clinic_id", clinicId);
+  const { error } = await supabase
+    .from("kiosk_settings" as never)
+    .update(input as never)
+    .eq("clinic_id", clinicId);
   if (error) throw error;
 }
 
@@ -127,7 +141,9 @@ export async function regenerateKioskToken(clinicId: string) {
 export async function getPanelSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("panel_settings" as never)
-    .select("clinic_id, name, enabled, public_token, show_mode, show_destination, full_screen, show_clock, show_latest_calls, latest_calls_limit, sound_enabled, voice_enabled, voice_name, voice_volume, voice_rate, voice_pitch, voice_repeat_count, voice_repeat_interval_seconds, phrase_template" as never)
+    .select(
+      "clinic_id, name, enabled, public_token, show_mode, show_destination, full_screen, show_clock, show_latest_calls, latest_calls_limit, sound_enabled, voice_enabled, voice_name, voice_volume, voice_rate, voice_pitch, voice_repeat_count, voice_repeat_interval_seconds, phrase_template" as never,
+    )
     .eq("clinic_id", clinicId)
     .single();
   if (error) throw error;
@@ -135,7 +151,10 @@ export async function getPanelSettings(clinicId: string) {
 }
 
 export async function updatePanelSettings(clinicId: string, input: Partial<PanelSettingsRow>) {
-  const { error } = await supabase.from("panel_settings" as never).update(input as never).eq("clinic_id", clinicId);
+  const { error } = await supabase
+    .from("panel_settings" as never)
+    .update(input as never)
+    .eq("clinic_id", clinicId);
   if (error) throw error;
 }
 
@@ -152,7 +171,9 @@ export async function regeneratePanelToken(clinicId: string) {
 export async function getPrintSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("print_settings" as never)
-    .select("clinic_id, paper_size, welcome_message, footer_message, qr_enabled, browser_fallback_enabled, webusb_enabled, webserial_enabled, local_agent_endpoint" as never)
+    .select(
+      "clinic_id, paper_size, welcome_message, footer_message, qr_enabled, browser_fallback_enabled, webusb_enabled, webserial_enabled, local_agent_endpoint" as never,
+    )
     .eq("clinic_id", clinicId)
     .single();
   if (error) throw error;
@@ -160,6 +181,9 @@ export async function getPrintSettings(clinicId: string) {
 }
 
 export async function updatePrintSettings(clinicId: string, input: Partial<PrintSettingsRow>) {
-  const { error } = await supabase.from("print_settings" as never).update(input as never).eq("clinic_id", clinicId);
+  const { error } = await supabase
+    .from("print_settings" as never)
+    .update(input as never)
+    .eq("clinic_id", clinicId);
   if (error) throw error;
 }

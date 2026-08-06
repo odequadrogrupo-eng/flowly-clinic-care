@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useAuth";
 import { useRealtime } from "@/hooks/useRealtime";
 import { formatTime } from "@/lib/queue";
-import { listRecentCalls } from "@/services/calls";
+import { formatPanelDisplayName, listRecentCalls } from "@/services/calls";
 import { getPanelSettings } from "@/services/totem";
 
 export const Route = createFileRoute("/painel")({
@@ -18,10 +18,14 @@ export const Route = createFileRoute("/painel")({
       { title: "Painel de chamadas — ClinicFlow" },
       {
         name: "description",
-        content: "Painel de chamadas para a sala de espera: paciente chamado, profissional e sala em tempo real.",
+        content:
+          "Painel de chamadas para a sala de espera: paciente chamado, profissional e sala em tempo real.",
       },
       { property: "og:title", content: "Painel de chamadas — ClinicFlow" },
-      { property: "og:description", content: "Exiba chamadas de pacientes na TV da recepção em tempo real." },
+      {
+        property: "og:description",
+        content: "Exiba chamadas de pacientes na TV da recepção em tempo real.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -52,7 +56,10 @@ function DisplayPanel() {
   const current = data?.[0];
   const previous = (data ?? []).slice(1, 5);
 
-  function buildVoiceText(template: string, input: { ticket: string; destination: string; firstName: string }) {
+  function buildVoiceText(
+    template: string,
+    input: { ticket: string; destination: string; firstName: string },
+  ) {
     return template
       .replaceAll("{{ticket}}", input.ticket)
       .replaceAll("{{destination}}", input.destination)
@@ -75,7 +82,9 @@ function DisplayPanel() {
       utterance.rate = Math.max(0.5, Math.min(2, cfg.voice_rate || 1));
       utterance.pitch = Math.max(0, Math.min(2, cfg.voice_pitch || 1));
       if (voiceName) {
-        const selected = window.speechSynthesis.getVoices().find((voice) => voice.name === voiceName);
+        const selected = window.speechSynthesis
+          .getVoices()
+          .find((voice) => voice.name === voiceName);
         if (selected) utterance.voice = selected;
       }
       window.speechSynthesis.speak(utterance);
@@ -88,12 +97,19 @@ function DisplayPanel() {
   }
 
   useEffect(() => {
-    if (!current || !sound || current.id === lastSpoken || profile?.clinics?.voice_enabled === false) return;
+    if (
+      !current ||
+      !sound ||
+      current.id === lastSpoken ||
+      profile?.clinics?.voice_enabled === false
+    )
+      return;
     setLastSpoken(current.id);
-    const ticketLike = current.display_name;
+    const ticketLike = current.ticket_code ?? current.display_name;
     const firstName = current.display_name.split(" ")[0] ?? current.display_name;
     const destination = current.room_name ? `consultório ${current.room_name}` : "recepção";
-    const phraseTemplate = panelSettingsQuery.data?.phrase_template ?? "Senha {{ticket}}, dirigir-se a {{destination}}.";
+    const phraseTemplate =
+      panelSettingsQuery.data?.phrase_template ?? "Senha {{ticket}}, dirigir-se a {{destination}}.";
     const text = buildVoiceText(phraseTemplate, { ticket: ticketLike, destination, firstName });
     speakWithSettings(text);
   }, [current, sound, lastSpoken, profile?.clinics?.voice_enabled, panelSettingsQuery.data]);
@@ -106,7 +122,8 @@ function DisplayPanel() {
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold">Painel de chamadas</h1>
           <p className="mt-3 opacity-90">
-            Entre com o usuário da clínica neste dispositivo para exibir as chamadas na sala de espera.
+            Entre com o usuário da clínica neste dispositivo para exibir as chamadas na sala de
+            espera.
           </p>
           <Button asChild variant="secondary" className="mt-6">
             <Link to="/auth">Entrar</Link>
@@ -120,7 +137,9 @@ function DisplayPanel() {
     <main className="min-h-screen bg-primary px-4 py-6 text-primary-foreground sm:px-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm uppercase tracking-widest opacity-75">{profile.clinics?.name ?? "Clínica"}</p>
+          <p className="text-sm uppercase tracking-widest opacity-75">
+            {profile.clinics?.name ?? "Clínica"}
+          </p>
           <h1 className="text-2xl font-bold sm:text-3xl">Painel de chamadas</h1>
         </div>
         <Button
@@ -138,12 +157,15 @@ function DisplayPanel() {
         {current ? (
           <>
             <p className="text-sm uppercase tracking-[0.3em] opacity-80">Chamando agora</p>
-            <p className="mt-4 text-4xl font-black leading-tight sm:text-7xl">{current.display_name}</p>
+            <p className="mt-4 text-4xl font-black leading-tight sm:text-7xl">
+              {formatPanelDisplayName(current, panelSettingsQuery.data?.show_mode ?? "name_abbreviated")}
+            </p>
             <p className="mt-6 text-2xl font-semibold sm:text-4xl">
               {current.room_name ? `Sala ${current.room_name}` : "Recepção"}
             </p>
             <p className="mt-2 text-lg opacity-85 sm:text-2xl">
-              {current.professional_name ?? "Equipe de atendimento"} · {formatTime(current.called_at)}
+              {current.professional_name ?? "Equipe de atendimento"} ·{" "}
+              {formatTime(current.called_at)}
             </p>
           </>
         ) : (
@@ -160,7 +182,9 @@ function DisplayPanel() {
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {previous.map((call) => (
               <div key={call.id} className="rounded-2xl bg-primary-foreground/10 p-4">
-                <p className="text-xl font-bold">{call.display_name}</p>
+                <p className="text-xl font-bold">
+                  {formatPanelDisplayName(call, panelSettingsQuery.data?.show_mode ?? "name_abbreviated")}
+                </p>
                 <p className="mt-1 text-sm opacity-85">
                   {call.room_name ?? "Recepção"} · {formatTime(call.called_at)}
                 </p>

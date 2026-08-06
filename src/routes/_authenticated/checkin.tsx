@@ -31,9 +31,15 @@ export const Route = createFileRoute("/_authenticated/checkin")({
   head: () => ({
     meta: [
       { title: "Check-in de paciente — ClinicFlow" },
-      { name: "description", content: "Registre a chegada do paciente e coloque-o na fila de atendimento." },
+      {
+        name: "description",
+        content: "Registre a chegada do paciente e coloque-o na fila de atendimento.",
+      },
       { property: "og:title", content: "Check-in de paciente — ClinicFlow" },
-      { property: "og:description", content: "Entrada de pacientes na fila de atendimento da clínica." },
+      {
+        property: "og:description",
+        content: "Entrada de pacientes na fila de atendimento da clínica.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -42,7 +48,11 @@ export const Route = createFileRoute("/_authenticated/checkin")({
 
 function CheckinPage() {
   return (
-    <Page title="Check-in de paciente" description="Busque o paciente e confirme a entrada na fila" allowed={["admin", "receptionist", "attendant"]}>
+    <Page
+      title="Check-in de paciente"
+      description="Busque o paciente e confirme a entrada na fila"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => <CheckinContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -107,7 +117,14 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
     if (!specialty.trim() && first.professionals?.specialty) {
       setSpecialty(first.professionals.specialty);
     }
-  }, [appointmentsQuery.data, professionalId, professionalsQuery.data, roomId, roomsQuery.data, specialty]);
+  }, [
+    appointmentsQuery.data,
+    professionalId,
+    professionalsQuery.data,
+    roomId,
+    roomsQuery.data,
+    specialty,
+  ]);
 
   const createPatient = useMutation({
     mutationFn: async () => {
@@ -132,8 +149,8 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
       const professional =
         professionalId === NONE
           ? null
-          : (professionalsQuery.data ?? []).find((item) => item.id === professionalId) ?? null;
-      const resolvedRoom = roomId === NONE ? professional?.room_id ?? null : roomId;
+          : ((professionalsQuery.data ?? []).find((item) => item.id === professionalId) ?? null);
+      const resolvedRoom = roomId === NONE ? (professional?.room_id ?? null) : roomId;
       const queueId = await createQueueCheckin(clinicId, {
         patientId: selected.id,
         professionalId: professional?.id ?? null,
@@ -198,7 +215,8 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
                 >
                   <p className="font-medium">{patient.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {patient.cpf ? `CPF ${patient.cpf}` : "Sem CPF"} · {patient.phone ?? "Sem telefone"}
+                    {patient.cpf ? `CPF ${patient.cpf}` : "Sem CPF"} ·{" "}
+                    {patient.phone ?? "Sem telefone"}
                   </p>
                 </button>
               ))
@@ -213,7 +231,9 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
               <Input
                 id="np-name"
                 value={newPatient.full_name}
-                onChange={(event) => setNewPatient({ ...newPatient, full_name: event.target.value })}
+                onChange={(event) =>
+                  setNewPatient({ ...newPatient, full_name: event.target.value })
+                }
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -235,7 +255,11 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => createPatient.mutate()} disabled={createPatient.isPending}>
+              <Button
+                size="sm"
+                onClick={() => createPatient.mutate()}
+                disabled={createPatient.isPending}
+              >
                 Salvar paciente
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
@@ -253,17 +277,22 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
       <div className="card-soft space-y-4 p-5">
         <div>
           <h2 className="font-semibold">2. Atendimento</h2>
-          <p className="text-sm text-muted-foreground">Data e horário de chegada são registrados automaticamente.</p>
+          <p className="text-sm text-muted-foreground">
+            Data e horário de chegada são registrados automaticamente.
+          </p>
         </div>
 
         {(appointmentsQuery.data ?? []).length > 0 ? (
           <div className="rounded-xl border bg-primary/5 p-3 text-sm">
             <p className="font-medium">Sugestão da agenda de hoje</p>
             <p className="text-muted-foreground">
-              {new Date((appointmentsQuery.data ?? [])[0]!.scheduled_for).toLocaleTimeString("pt-BR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {new Date((appointmentsQuery.data ?? [])[0]!.scheduled_for).toLocaleTimeString(
+                "pt-BR",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}
               {" · "}
               {(appointmentsQuery.data ?? [])[0]!.professionals?.full_name ?? "Sem profissional"}
               {" · "}
@@ -333,12 +362,22 @@ function CheckinContent({ clinicId }: { clinicId: string }) {
 
         <div className="space-y-2">
           <Label htmlFor="notes">Observações</Label>
-          <Textarea id="notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            rows={3}
+          />
         </div>
 
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 
-        <Button className="w-full" size="lg" disabled={!selected || checkin.isPending} onClick={() => checkin.mutate()}>
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!selected || checkin.isPending}
+          onClick={() => checkin.mutate()}
+        >
           {checkin.isPending ? "Registrando..." : "Confirmar entrada na fila"}
         </Button>
       </div>

@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/export-dist.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "echo \"No automated tests configured\"",
     "format": "prettier --write .",
     "quality:check": "npm run typecheck && npm run build",
     "quality:strict": "npm run typecheck && npm run lint && npm run build",

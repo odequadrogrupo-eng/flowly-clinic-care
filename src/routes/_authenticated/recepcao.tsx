@@ -8,10 +8,20 @@ import { Page } from "@/components/layout/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { logAudit, speak } from "@/lib/queue";
-import { listCheckinProfessionals, listCheckinRooms, searchPatientsForCheckin } from "@/services/checkin";
+import {
+  listCheckinProfessionals,
+  listCheckinRooms,
+  searchPatientsForCheckin,
+} from "@/services/checkin";
 import {
   attachTicketToPatient,
   callReceptionTicket,
@@ -33,7 +43,11 @@ const NONE = "__none__";
 
 function ReceptionPage() {
   return (
-    <Page title="Recepção" description="Triagem e encaminhamento de senhas" allowed={["admin", "receptionist", "attendant"]}>
+    <Page
+      title="Recepção"
+      description="Triagem e encaminhamento de senhas"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => <ReceptionContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -86,7 +100,12 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
   const callMutation = useMutation({
     mutationFn: async (ticket: ReceptionTicket) => {
       await callReceptionTicket(clinicId, ticket.id);
-      await logAudit({ clinicId, action: "call_reception", entity: "tickets", entityId: ticket.id });
+      await logAudit({
+        clinicId,
+        action: "call_reception",
+        entity: "tickets",
+        entityId: ticket.id,
+      });
       speak(`Senha ${ticket.code}, dirigir-se à recepção`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reception-tickets", clinicId] }),
@@ -113,7 +132,8 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
       queryClient.invalidateQueries({ queryKey: ["reception-patients-search", clinicId] });
       toast.success("Paciente cadastrado e vinculado");
     },
-    onError: (error: Error) => toast.error("Erro ao cadastrar paciente", { description: error.message }),
+    onError: (error: Error) =>
+      toast.error("Erro ao cadastrar paciente", { description: error.message }),
   });
 
   const sendMutation = useMutation({
@@ -128,7 +148,13 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
         serviceType,
         notes,
       });
-      await logAudit({ clinicId, action: "forward_service", entity: "tickets", entityId: selectedTicket.id, details: { queueId } });
+      await logAudit({
+        clinicId,
+        action: "forward_service",
+        entity: "tickets",
+        entityId: selectedTicket.id,
+        details: { queueId },
+      });
     },
     onSuccess: () => {
       toast.success("Encaminhado para atendimento");
@@ -151,7 +177,12 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
       <section className="card-soft p-4 xl:col-span-2">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="font-semibold">Senhas na recepção</h2>
-          <Input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Buscar senha" className="max-w-xs" />
+          <Input
+            value={term}
+            onChange={(event) => setTerm(event.target.value)}
+            placeholder="Buscar senha"
+            className="max-w-xs"
+          />
         </div>
 
         {filteredTickets.length === 0 ? (
@@ -159,13 +190,18 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
         ) : (
           <div className="space-y-2">
             {filteredTickets.map((ticket) => (
-              <div key={ticket.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
+              <div
+                key={ticket.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"
+              >
                 <div>
                   <p className="font-semibold">{ticket.code}</p>
-                  <p className="text-xs text-muted-foreground">{ticket.priority ? "Preferencial" : "Normal"} · {ticket.status}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ticket.priority ? "Preferencial" : "Normal"} · {ticket.status}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(ticket.status === "called_reception" || ticket.status === "called_service") ? (
+                  {ticket.status === "called_reception" || ticket.status === "called_service" ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -184,8 +220,12 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
                       Chamar
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => setSelectedTicket(ticket)}>Triar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(ticket)}>Cancelar</Button>
+                  <Button size="sm" onClick={() => setSelectedTicket(ticket)}>
+                    Triar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(ticket)}>
+                    Cancelar
+                  </Button>
                 </div>
               </div>
             ))}
@@ -195,16 +235,27 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
 
       <section className="card-soft space-y-3 p-4">
         <h2 className="font-semibold">Triagem</h2>
-        <p className="text-sm text-muted-foreground">{selectedTicket ? `Senha selecionada: ${selectedTicket.code}` : "Selecione uma senha para triagem."}</p>
+        <p className="text-sm text-muted-foreground">
+          {selectedTicket
+            ? `Senha selecionada: ${selectedTicket.code}`
+            : "Selecione uma senha para triagem."}
+        </p>
 
         <div className="space-y-2">
           <Label>Paciente existente</Label>
-          <Select value={selectedPatientId || NONE} onValueChange={(value) => setSelectedPatientId(value === NONE ? "" : value)}>
-            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+          <Select
+            value={selectedPatientId || NONE}
+            onValueChange={(value) => setSelectedPatientId(value === NONE ? "" : value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>Não selecionado</SelectItem>
               {(patientsQuery.data ?? []).map((patient) => (
-                <SelectItem key={patient.id} value={patient.id}>{patient.full_name}</SelectItem>
+                <SelectItem key={patient.id} value={patient.id}>
+                  {patient.full_name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -212,22 +263,56 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
 
         <div className="space-y-2 rounded-xl border p-3">
           <p className="text-sm font-medium">Cadastro rápido</p>
-          <Input placeholder="Nome" value={quickPatient.full_name} onChange={(event) => setQuickPatient({ ...quickPatient, full_name: event.target.value })} />
-          <Input placeholder="Telefone" value={quickPatient.phone} onChange={(event) => setQuickPatient({ ...quickPatient, phone: event.target.value })} />
-          <Input placeholder="CPF (opcional)" value={quickPatient.cpf} onChange={(event) => setQuickPatient({ ...quickPatient, cpf: event.target.value })} />
-          <Input type="date" value={quickPatient.birth_date} onChange={(event) => setQuickPatient({ ...quickPatient, birth_date: event.target.value })} />
-          <Input placeholder="Endereço" value={quickPatient.address} onChange={(event) => setQuickPatient({ ...quickPatient, address: event.target.value })} />
-          <Button variant="outline" onClick={() => registerPatientMutation.mutate()} disabled={!selectedTicket || registerPatientMutation.isPending}>Cadastrar e vincular</Button>
+          <Input
+            placeholder="Nome"
+            value={quickPatient.full_name}
+            onChange={(event) =>
+              setQuickPatient({ ...quickPatient, full_name: event.target.value })
+            }
+          />
+          <Input
+            placeholder="Telefone"
+            value={quickPatient.phone}
+            onChange={(event) => setQuickPatient({ ...quickPatient, phone: event.target.value })}
+          />
+          <Input
+            placeholder="CPF (opcional)"
+            value={quickPatient.cpf}
+            onChange={(event) => setQuickPatient({ ...quickPatient, cpf: event.target.value })}
+          />
+          <Input
+            type="date"
+            value={quickPatient.birth_date}
+            onChange={(event) =>
+              setQuickPatient({ ...quickPatient, birth_date: event.target.value })
+            }
+          />
+          <Input
+            placeholder="Endereço"
+            value={quickPatient.address}
+            onChange={(event) => setQuickPatient({ ...quickPatient, address: event.target.value })}
+          />
+          <Button
+            variant="outline"
+            onClick={() => registerPatientMutation.mutate()}
+            disabled={!selectedTicket || registerPatientMutation.isPending}
+          >
+            Cadastrar e vincular
+          </Button>
         </div>
 
         <div className="space-y-2">
           <Label>Profissional</Label>
           <Select value={professionalId} onValueChange={setProfessionalId}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>Definir depois</SelectItem>
               {(professionalsQuery.data ?? []).map((professional) => (
-                <SelectItem key={professional.id} value={professional.id}>{professional.full_name}</SelectItem>
+                <SelectItem key={professional.id} value={professional.id}>
+                  {professional.full_name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -236,20 +321,36 @@ function ReceptionContent({ clinicId }: { clinicId: string }) {
         <div className="space-y-2">
           <Label>Sala</Label>
           <Select value={roomId} onValueChange={setRoomId}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>Definir depois</SelectItem>
               {(roomsQuery.data ?? []).map((room) => (
-                <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                <SelectItem key={room.id} value={room.id}>
+                  {room.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <Input value={serviceType} onChange={(event) => setServiceType(event.target.value)} placeholder="Tipo de atendimento" />
-        <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Observações" rows={3} />
+        <Input
+          value={serviceType}
+          onChange={(event) => setServiceType(event.target.value)}
+          placeholder="Tipo de atendimento"
+        />
+        <Textarea
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          placeholder="Observações"
+          rows={3}
+        />
 
-        <Button onClick={() => sendMutation.mutate()} disabled={!selectedTicket || !selectedPatientId || sendMutation.isPending}>
+        <Button
+          onClick={() => sendMutation.mutate()}
+          disabled={!selectedTicket || !selectedPatientId || sendMutation.isPending}
+        >
           Enviar para atendimento
         </Button>
       </section>

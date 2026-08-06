@@ -75,7 +75,9 @@ export async function createClinicInvite(
       role: data.role,
       created_by: createdBy,
     } as never)
-    .select("id, clinic_id, email, role, invite_token, expires_at, accepted_at, revoked_at, created_at")
+    .select(
+      "id, clinic_id, email, role, invite_token, expires_at, accepted_at, revoked_at, created_at",
+    )
     .single();
 
   if (error) throw error;
@@ -94,7 +96,9 @@ export async function createClinicInvite(
 export async function listPendingInvites(clinicId: string): Promise<InviteRow[]> {
   const { data, error } = await supabase
     .from("clinic_invites" as never)
-    .select("id, clinic_id, email, role, invite_token, expires_at, accepted_at, revoked_at, created_at")
+    .select(
+      "id, clinic_id, email, role, invite_token, expires_at, accepted_at, revoked_at, created_at",
+    )
     .eq("clinic_id", clinicId)
     .is("accepted_at", null)
     .is("revoked_at", null)

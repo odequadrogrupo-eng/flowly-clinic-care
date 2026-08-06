@@ -97,13 +97,19 @@ export async function createQueueCheckin(clinicId: string, input: CheckinQueueIn
   return data.id as string;
 }
 
-export async function listPatientDayAppointments(clinicId: string, patientId: string, dayIsoDate: string) {
+export async function listPatientDayAppointments(
+  clinicId: string,
+  patientId: string,
+  dayIsoDate: string,
+) {
   const start = new Date(`${dayIsoDate}T00:00:00`);
   const end = new Date(`${dayIsoDate}T23:59:59`);
 
   const { data, error } = await supabase
     .from("appointments" as never)
-    .select("id, scheduled_for, duration_minutes, status, professionals(full_name, specialty), rooms(name, number)" as never)
+    .select(
+      "id, scheduled_for, duration_minutes, status, professionals(full_name, specialty), rooms(name, number)" as never,
+    )
     .eq("clinic_id", clinicId)
     .eq("patient_id", patientId)
     .gte("scheduled_for", start.toISOString())

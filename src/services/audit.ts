@@ -2,7 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 export type AuditLogRow = Database["public"]["Tables"]["audit_logs"]["Row"] & {
-  profiles: Pick<Database["public"]["Tables"]["profiles"]["Row"], "id" | "full_name" | "email"> | null;
+  profiles: Pick<
+    Database["public"]["Tables"]["profiles"]["Row"],
+    "id" | "full_name" | "email"
+  > | null;
 };
 
 export async function listAuditLogs(input: {
@@ -31,7 +34,10 @@ export async function listAuditLogs(input: {
   const rows = (data ?? []) as Database["public"]["Tables"]["audit_logs"]["Row"][];
   const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))] as string[];
 
-  let profileMap = new Map<string, Pick<Database["public"]["Tables"]["profiles"]["Row"], "id" | "full_name" | "email">>();
+  let profileMap = new Map<
+    string,
+    Pick<Database["public"]["Tables"]["profiles"]["Row"], "id" | "full_name" | "email">
+  >();
   if (userIds.length > 0) {
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
@@ -43,7 +49,7 @@ export async function listAuditLogs(input: {
 
   return rows.map((row) => ({
     ...row,
-    profiles: row.user_id ? profileMap.get(row.user_id) ?? null : null,
+    profiles: row.user_id ? (profileMap.get(row.user_id) ?? null) : null,
   }));
 }
 

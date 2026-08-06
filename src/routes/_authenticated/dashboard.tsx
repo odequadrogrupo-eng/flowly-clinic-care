@@ -11,7 +11,13 @@ import { Page } from "@/components/layout/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { roleLabels, type AppRole, type ProfileWithClinic } from "@/hooks/useAuth";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -34,14 +40,28 @@ import {
   revokeInvite,
   updateClinicUser,
 } from "@/services/user-permissions";
+import {
+  getDemoRunActorName,
+  listDemoRuns,
+  runResetAndRecreateDemoClubMedico,
+  runSeedDemoClubMedico,
+  type DemoRunRow,
+  type DemoSeedSummary,
+} from "@/services/demo-admin";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — ClinicFlow" },
-      { name: "description", content: "Indicadores de espera, atendimentos e profissionais disponíveis da clínica." },
+      {
+        name: "description",
+        content: "Indicadores de espera, atendimentos e profissionais disponíveis da clínica.",
+      },
       { property: "og:title", content: "Dashboard — ClinicFlow" },
-      { property: "og:description", content: "Visão geral do atendimento da clínica em tempo real." },
+      {
+        property: "og:description",
+        content: "Visão geral do atendimento da clínica em tempo real.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -75,6 +95,8 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("receptionist");
   const [lastInviteUrl, setLastInviteUrl] = useState("");
+  const [demoResult, setDemoResult] = useState<DemoSeedSummary | null>(null);
+  const [demoProgressLabel, setDemoProgressLabel] = useState<string | null>(null);
 
   const [clinicForm, setClinicForm] = useState<ClinicFormValues>({
     name: profile.clinics?.name ?? "",
@@ -129,12 +151,22 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
   });
 
   const updateUserPermissionMutation = useMutation({
-    mutationFn: async (input: { userId: string; role: AppRole; active: boolean; fullName: string }) => {
-      await updateClinicUser(clinicId, input.userId, {
-        role: input.role,
-        active: input.active,
-        full_name: input.fullName,
-      }, profile.id);
+    mutationFn: async (input: {
+      userId: string;
+      role: AppRole;
+      active: boolean;
+      fullName: string;
+    }) => {
+      await updateClinicUser(
+        clinicId,
+        input.userId,
+        {
+          role: input.role,
+          active: input.active,
+          full_name: input.fullName,
+        },
+        profile.id,
+      );
       await logAudit({ clinicId, action: "update", entity: "profiles", entityId: input.userId });
     },
     onSuccess: () => {
@@ -227,6 +259,76 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
     },
   });
 
+  const demoRunsQuery = useQuery({
+    queryKey: ["demo-seed-runs", clinicId],
+    enabled: profile.role === "admin",
+    queryFn: async () => {
+      const runs = await listDemoRuns(clinicId, 10);
+      const enriched = await Promise.all(
+        runs.map(async (run) => ({
+          ...run,
+          actorName: await getDemoRunActorName(run.triggered_by),
+        })),
+      );
+      return enriched;
+    },
+  });
+
+  const seedDemoMutation = useMutation({
+    mutationFn: async () => {
+      setDemoProgressLabel("Validando permissões e iniciando seed...");
+      const response = await runSeedDemoClubMedico();
+      if (!response.ok || !response.summary) {
+        throw new Error(response.error ?? "Falha ao popular ambiente demo.");
+      }
+      return response.summary;
+    },
+    onSuccess: (result) => {
+      setDemoProgressLabel("Finalizado com sucesso.");
+      setDemoResult(result);
+      toast.success("Ambiente de demonstração atualizado");
+      queryClient.invalidateQueries({ queryKey: ["demo-seed-runs", clinicId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-queues", clinicId] });
+      queryClient.invalidateQueries({ queryKey: ["queue"] });
+    },
+    onError: (error: Error) => {
+      setDemoProgressLabel(null);
+      toast.error("Erro ao popular dados demo", { description: error.message });
+    },
+  });
+
+  const recreateDemoMutation = useMutation({
+    mutationFn: async () => {
+      const pass1 = window.prompt("Digite exatamente: RECRIAR CLUB MEDICO");
+      if (pass1 !== "RECRIAR CLUB MEDICO") {
+        throw new Error("Primeira confirmação inválida.");
+      }
+      const pass2 = window.prompt("Digite exatamente: APAGAR SOMENTE DEMO");
+      if (pass2 !== "APAGAR SOMENTE DEMO") {
+        throw new Error("Segunda confirmação inválida.");
+      }
+
+      setDemoProgressLabel("Limpando dados demo e recriando ambiente...");
+      const response = await runResetAndRecreateDemoClubMedico();
+      if (!response.ok || !response.recreated) {
+        throw new Error(response.error ?? "Falha ao recriar ambiente demo.");
+      }
+      return response.recreated;
+    },
+    onSuccess: (result) => {
+      setDemoProgressLabel("Recriação concluída.");
+      setDemoResult(result);
+      toast.success("Dados de demonstração recriados");
+      queryClient.invalidateQueries({ queryKey: ["demo-seed-runs", clinicId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-queues", clinicId] });
+      queryClient.invalidateQueries({ queryKey: ["queue"] });
+    },
+    onError: (error: Error) => {
+      setDemoProgressLabel(null);
+      toast.error("Erro ao recriar dados demo", { description: error.message });
+    },
+  });
+
   if (queuesQuery.isLoading) return <LoadingState />;
   if (queuesQuery.error) return <ErrorState error={queuesQuery.error} />;
 
@@ -287,6 +389,124 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
       {profile.role === "admin" ? (
         <>
           <section className="card-soft p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">Ambiente de demonstração</h2>
+                <p className="text-sm text-muted-foreground">
+                  Popula e recria com segurança o cenário Club Médico via Edge Functions protegidas.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigator.clipboard.writeText("admin@clubmedico.teste\nClubMedico@2026")
+                }
+              >
+                Copiar credenciais de teste
+              </Button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                onClick={() => {
+                  const ok = window.confirm(
+                    "Confirmar população idempotente dos dados Club Médico?",
+                  );
+                  if (ok) seedDemoMutation.mutate();
+                }}
+                disabled={seedDemoMutation.isPending || recreateDemoMutation.isPending}
+              >
+                Popular dados do Club Médico
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => recreateDemoMutation.mutate()}
+                disabled={seedDemoMutation.isPending || recreateDemoMutation.isPending}
+              >
+                Recriar dados de demonstração
+              </Button>
+            </div>
+
+            {demoProgressLabel ? (
+              <p className="mt-3 text-sm text-muted-foreground">{demoProgressLabel}</p>
+            ) : null}
+
+            {demoResult ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <StatCard
+                  label="Clínica"
+                  value={demoResult.clinic === "created" ? "Criada" : "Atualizada"}
+                  icon={<Activity className="size-5" />}
+                />
+                <StatCard
+                  label="Usuários criados"
+                  value={demoResult.usersCreated}
+                  icon={<Users className="size-5" />}
+                />
+                <StatCard
+                  label="Usuários atualizados"
+                  value={demoResult.usersUpdated}
+                  icon={<Users className="size-5" />}
+                />
+                <StatCard
+                  label="Médicos criados"
+                  value={demoResult.doctorsCreated}
+                  icon={<Stethoscope className="size-5" />}
+                />
+                <StatCard
+                  label="Pacientes criados"
+                  value={demoResult.patientsCreated}
+                  icon={<Users className="size-5" />}
+                />
+                <StatCard
+                  label="Tickets processados"
+                  value={demoResult.ticketsCreated}
+                  icon={<Activity className="size-5" />}
+                />
+              </div>
+            ) : null}
+
+            {demoResult?.tenantValidation?.checks?.length ? (
+              <div className="mt-4 rounded-xl border p-3">
+                <p className="text-sm font-medium">Validação multiempresa</p>
+                <div className="mt-2 space-y-1 text-sm">
+                  {demoResult.tenantValidation.checks.map((check) => (
+                    <p
+                      key={check.table}
+                      className={check.passed ? "text-emerald-600" : "text-destructive"}
+                    >
+                      {check.table}: {check.passed ? "OK" : "Falhou"} - {check.details}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-4 rounded-xl border p-3">
+              <p className="text-sm font-medium">Últimas execuções</p>
+              <div className="mt-2 space-y-2 text-sm">
+                {(demoRunsQuery.data ?? []).length === 0 ? (
+                  <p className="text-muted-foreground">Nenhuma execução registrada ainda.</p>
+                ) : (
+                  (demoRunsQuery.data ?? []).map(
+                    (run: DemoRunRow & { actorName: string | null }) => (
+                      <div key={run.id} className="rounded-lg border p-2">
+                        <p className="font-medium">
+                          {run.action} · {run.status}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {new Date(run.created_at).toLocaleString("pt-BR")} ·{" "}
+                          {run.actorName ?? "Usuário"}
+                        </p>
+                      </div>
+                    ),
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="card-soft p-5">
             <h2 className="font-semibold">Cadastro da clinica</h2>
             <p className="text-sm text-muted-foreground">Dados institucionais usados no sistema.</p>
 
@@ -296,7 +516,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-name"
                   value={clinicForm.name}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, name: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, name: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -304,7 +526,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-legal-name"
                   value={clinicForm.legal_name}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, legal_name: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, legal_name: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -312,7 +536,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-document"
                   value={clinicForm.document}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, document: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, document: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -320,7 +546,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-phone"
                   value={clinicForm.phone}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, phone: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
@@ -329,7 +557,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                   id="clinic-email"
                   type="email"
                   value={clinicForm.email}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, email: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, email: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
@@ -338,7 +568,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                   id="clinic-address"
                   rows={2}
                   value={clinicForm.address}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, address: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, address: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -346,7 +578,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-hours"
                   value={clinicForm.opening_hours}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, opening_hours: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, opening_hours: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -354,7 +588,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <Input
                   id="clinic-logo"
                   value={clinicForm.logo_url}
-                  onChange={(event) => setClinicForm((prev) => ({ ...prev, logo_url: event.target.value }))}
+                  onChange={(event) =>
+                    setClinicForm((prev) => ({ ...prev, logo_url: event.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -378,7 +614,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
 
           <section className="card-soft p-5">
             <h2 className="font-semibold">Usuarios e permissoes</h2>
-            <p className="text-sm text-muted-foreground">Gerencie perfis da clinica e convites de acesso.</p>
+            <p className="text-sm text-muted-foreground">
+              Gerencie perfis da clinica e convites de acesso.
+            </p>
 
             <div className="mt-4 grid gap-3 rounded-xl border p-3 md:grid-cols-[1fr_220px_auto]">
               <Input
@@ -397,7 +635,10 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                   <SelectItem value="public_display">Painel publico</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={() => createInviteMutation.mutate()} disabled={createInviteMutation.isPending}>
+              <Button
+                onClick={() => createInviteMutation.mutate()}
+                disabled={createInviteMutation.isPending}
+              >
                 {createInviteMutation.isPending ? "Gerando..." : "Criar convite"}
               </Button>
             </div>
@@ -423,7 +664,10 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
             <div className="mt-5 space-y-3">
               <h3 className="text-sm font-semibold">Usuarios ativos/inativos</h3>
               {(usersQuery.data ?? []).map((user) => (
-                <div key={user.id} className="grid gap-2 rounded-xl border p-3 md:grid-cols-[1fr_220px_120px_auto] md:items-center">
+                <div
+                  key={user.id}
+                  className="grid gap-2 rounded-xl border p-3 md:grid-cols-[1fr_220px_120px_auto] md:items-center"
+                >
                   <Input
                     defaultValue={user.full_name}
                     onBlur={(event) => {
@@ -478,14 +722,19 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 </div>
               ))}
               {(usersQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum usuario encontrado para esta clinica.</p>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum usuario encontrado para esta clinica.
+                </p>
               ) : null}
             </div>
 
             <div className="mt-5 space-y-3">
               <h3 className="text-sm font-semibold">Convites pendentes</h3>
               {(invitesQuery.data ?? []).map((invite) => (
-                <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
+                <div
+                  key={invite.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"
+                >
                   <p className="text-sm">
                     {invite.email} · {roleLabels[invite.role]}
                   </p>
@@ -508,8 +757,16 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard label="Aguardando agora" value={waiting.length} icon={<Users className="size-5" />} />
-        <StatCard label="Atendidos hoje" value={finished.length} icon={<Activity className="size-5" />} />
+        <StatCard
+          label="Aguardando agora"
+          value={waiting.length}
+          icon={<Users className="size-5" />}
+        />
+        <StatCard
+          label="Atendidos hoje"
+          value={finished.length}
+          icon={<Activity className="size-5" />}
+        />
         <StatCard
           label="Tempo médio de espera"
           value={formatDuration(avgWait)}
@@ -541,7 +798,11 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="var(--color-border)"
+                />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
                 <Tooltip
@@ -551,7 +812,12 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                     background: "var(--color-card)",
                   }}
                 />
-                <Bar dataKey="total" name="Atendimentos" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="total"
+                  name="Atendimentos"
+                  fill="var(--color-chart-1)"
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -568,7 +834,8 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                 <div key={item.id} className="rounded-xl border p-3">
                   <p className="font-medium">{item.patients?.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.professionals?.full_name ?? "Sem profissional"} · início {formatTime(item.started_at)}
+                    {item.professionals?.full_name ?? "Sem profissional"} · início{" "}
+                    {formatTime(item.started_at)}
                   </p>
                 </div>
               ))
@@ -582,19 +849,28 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
           <h2 className="font-semibold">Últimos atendimentos</h2>
         </div>
         {latest.length === 0 ? (
-          <EmptyState title="Nenhum atendimento registrado" description="Faça um check-in para iniciar a fila." />
+          <EmptyState
+            title="Nenhum atendimento registrado"
+            description="Faça um check-in para iniciar a fila."
+          />
         ) : (
           <div className="divide-y">
             {latest.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-5 py-3"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{item.patients?.full_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.service_type ?? "Atendimento"} · {item.professionals?.full_name ?? "Sem profissional"} ·
-                    chegada {formatTime(item.checkin_at)}
+                    {item.service_type ?? "Atendimento"} ·{" "}
+                    {item.professionals?.full_name ?? "Sem profissional"} · chegada{" "}
+                    {formatTime(item.checkin_at)}
                   </p>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[item.status]}`}>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[item.status]}`}
+                >
                   {statusLabels[item.status]}
                 </span>
               </div>

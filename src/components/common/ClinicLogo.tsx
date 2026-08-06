@@ -21,7 +21,12 @@ export function ClinicLogo({
   const canRenderImage = Boolean(src) && !errored;
 
   return (
-    <div className={cn("flex items-center justify-center rounded-xl border bg-white px-2 py-1", className)}>
+    <div
+      className={cn(
+        "flex items-center justify-center rounded-xl border bg-white px-2 py-1",
+        className,
+      )}
+    >
       {canRenderImage ? (
         <img
           src={src ?? undefined}

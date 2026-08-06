@@ -15,9 +15,15 @@ export const Route = createFileRoute("/_authenticated/chamada")({
   head: () => ({
     meta: [
       { title: "Central de chamadas — ClinicFlow" },
-      { name: "description", content: "Histórico de chamadas para conferência e repetição de anúncio." },
+      {
+        name: "description",
+        content: "Histórico de chamadas para conferência e repetição de anúncio.",
+      },
       { property: "og:title", content: "Central de chamadas — ClinicFlow" },
-      { property: "og:description", content: "Acompanhe e repita chamadas de pacientes na clínica." },
+      {
+        property: "og:description",
+        content: "Acompanhe e repita chamadas de pacientes na clínica.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -30,7 +36,11 @@ function isoDateToday() {
 
 function CallsPage() {
   return (
-    <Page title="Central de chamadas" description="Histórico e repetição de chamadas" allowed={["admin", "receptionist", "attendant", "professional"]}>
+    <Page
+      title="Central de chamadas"
+      description="Histórico e repetição de chamadas"
+      allowed={["admin", "receptionist", "attendant", "professional"]}
+    >
       {(profile) => <CallsContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -70,11 +80,21 @@ function CallsContent({ clinicId }: { clinicId: string }) {
       <div className="grid gap-3 rounded-2xl border p-4 md:grid-cols-[1fr_1fr_2fr]">
         <div className="space-y-2">
           <Label htmlFor="calls-from">De</Label>
-          <Input id="calls-from" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+          <Input
+            id="calls-from"
+            type="date"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="calls-to">Até</Label>
-          <Input id="calls-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+          <Input
+            id="calls-to"
+            type="date"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="calls-search">Buscar</Label>
@@ -93,16 +113,23 @@ function CallsContent({ clinicId }: { clinicId: string }) {
 
       {items.length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Sem chamadas" description="Nenhuma chamada encontrada para os filtros selecionados." />
+          <EmptyState
+            title="Sem chamadas"
+            description="Nenhuma chamada encontrada para os filtros selecionados."
+          />
         </div>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="card-soft flex flex-wrap items-center justify-between gap-3 p-4">
+            <div
+              key={item.id}
+              className="card-soft flex flex-wrap items-center justify-between gap-3 p-4"
+            >
               <div>
                 <p className="font-semibold">{item.display_name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {item.professional_name ?? "Equipe de atendimento"} · {item.room_name ?? "Recepção"}
+                  {item.professional_name ?? "Equipe de atendimento"} ·{" "}
+                  {item.room_name ?? "Recepção"}
                 </p>
                 <p className="text-xs text-muted-foreground">{formatTime(item.called_at)}</p>
               </div>
@@ -110,7 +137,9 @@ function CallsContent({ clinicId }: { clinicId: string }) {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  speak(`${item.display_name}, ${item.room_name ? `sala ${item.room_name}` : "dirija-se à recepção"}`)
+                  speak(
+                    `${item.display_name}, ${item.room_name ? `sala ${item.room_name}` : "dirija-se à recepção"}`,
+                  )
                 }
               >
                 <BellRing className="size-4" /> Repetir

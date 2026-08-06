@@ -44,7 +44,9 @@ export const statusTone: Record<QueueStatus, string> = {
   no_show: "bg-muted text-muted-foreground",
 };
 
-function queueStatusToTicketStatus(status: QueueStatus):
+function queueStatusToTicketStatus(
+  status: QueueStatus,
+):
   | "waiting_reception"
   | "called_reception"
   | "waiting_service"
@@ -91,7 +93,6 @@ export function displayName(fullName: string) {
   return `${first} ${last.charAt(0).toUpperCase()}.`;
 }
 
-
 export async function callQueueItem(item: QueueItem, clinicId: string) {
   const now = new Date().toISOString();
   const nextStatus: QueueStatus =
@@ -121,9 +122,7 @@ export async function callQueueItem(item: QueueItem, clinicId: string) {
     room_id: item.room_id,
     display_name: displayName(item.patients?.full_name ?? "Paciente"),
     professional_name: item.professionals?.full_name ?? null,
-    room_name: item.rooms
-      ? [item.rooms.name, item.rooms.number].filter(Boolean).join(" ")
-      : null,
+    room_name: item.rooms ? [item.rooms.name, item.rooms.number].filter(Boolean).join(" ") : null,
     called_at: now,
   });
   if (callError) throw callError;
@@ -138,7 +137,8 @@ export async function updateQueueStatus(
 ) {
   const now = new Date().toISOString();
   const patch: Partial<QueueRow> = { status, ...extra };
-  if (status === "called" || status === "called_reception" || status === "called_service") patch.called_at = now;
+  if (status === "called" || status === "called_reception" || status === "called_service")
+    patch.called_at = now;
   if (status === "in_service") patch.started_at = now;
   if (status === "finished") patch.finished_at = now;
   if (status === "cancelled") patch.cancelled_at = now;
