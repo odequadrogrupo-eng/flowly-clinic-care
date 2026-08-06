@@ -10,33 +10,170 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PainelRouteImport } from './routes/painel'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAtendimentoRouteImport } from './routes/_authenticated/atendimento'
+import { Route as AuthenticatedCheckinRouteImport } from './routes/_authenticated/checkin'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedFilaRouteImport } from './routes/_authenticated/fila'
+import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
+import { Route as AuthenticatedProfissionaisRouteImport } from './routes/_authenticated/profissionais'
+import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAtendimentoRoute =
+  AuthenticatedAtendimentoRouteImport.update({
+    id: '/atendimento',
+    path: '/atendimento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCheckinRoute = AuthenticatedCheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFilaRoute = AuthenticatedFilaRouteImport.update({
+  id: '/fila',
+  path: '/fila',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
+  id: '/pacientes',
+  path: '/pacientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfissionaisRoute =
+  AuthenticatedProfissionaisRouteImport.update({
+    id: '/profissionais',
+    path: '/profissionais',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
+  id: '/salas',
+  path: '/salas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/atendimento': typeof AuthenticatedAtendimentoRoute
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fila': typeof AuthenticatedFilaRoute
+  '/pacientes': typeof AuthenticatedPacientesRoute
+  '/profissionais': typeof AuthenticatedProfissionaisRoute
+  '/salas': typeof AuthenticatedSalasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/atendimento': typeof AuthenticatedAtendimentoRoute
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fila': typeof AuthenticatedFilaRoute
+  '/pacientes': typeof AuthenticatedPacientesRoute
+  '/profissionais': typeof AuthenticatedProfissionaisRoute
+  '/salas': typeof AuthenticatedSalasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/painel': typeof PainelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/atendimento': typeof AuthenticatedAtendimentoRoute
+  '/_authenticated/checkin': typeof AuthenticatedCheckinRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/fila': typeof AuthenticatedFilaRoute
+  '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
+  '/_authenticated/profissionais': typeof AuthenticatedProfissionaisRoute
+  '/_authenticated/salas': typeof AuthenticatedSalasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/painel'
+    | '/reset-password'
+    | '/atendimento'
+    | '/checkin'
+    | '/dashboard'
+    | '/fila'
+    | '/pacientes'
+    | '/profissionais'
+    | '/salas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/painel'
+    | '/reset-password'
+    | '/atendimento'
+    | '/checkin'
+    | '/dashboard'
+    | '/fila'
+    | '/pacientes'
+    | '/profissionais'
+    | '/salas'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/painel'
+    | '/reset-password'
+    | '/_authenticated/atendimento'
+    | '/_authenticated/checkin'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/fila'
+    | '/_authenticated/pacientes'
+    | '/_authenticated/profissionais'
+    | '/_authenticated/salas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  PainelRoute: typeof PainelRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +185,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/atendimento': {
+      id: '/_authenticated/atendimento'
+      path: '/atendimento'
+      fullPath: '/atendimento'
+      preLoaderRoute: typeof AuthenticatedAtendimentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/checkin': {
+      id: '/_authenticated/checkin'
+      path: '/checkin'
+      fullPath: '/checkin'
+      preLoaderRoute: typeof AuthenticatedCheckinRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fila': {
+      id: '/_authenticated/fila'
+      path: '/fila'
+      fullPath: '/fila'
+      preLoaderRoute: typeof AuthenticatedFilaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pacientes': {
+      id: '/_authenticated/pacientes'
+      path: '/pacientes'
+      fullPath: '/pacientes'
+      preLoaderRoute: typeof AuthenticatedPacientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profissionais': {
+      id: '/_authenticated/profissionais'
+      path: '/profissionais'
+      fullPath: '/profissionais'
+      preLoaderRoute: typeof AuthenticatedProfissionaisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/salas': {
+      id: '/_authenticated/salas'
+      path: '/salas'
+      fullPath: '/salas'
+      preLoaderRoute: typeof AuthenticatedSalasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAtendimentoRoute: typeof AuthenticatedAtendimentoRoute
+  AuthenticatedCheckinRoute: typeof AuthenticatedCheckinRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFilaRoute: typeof AuthenticatedFilaRoute
+  AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
+  AuthenticatedProfissionaisRoute: typeof AuthenticatedProfissionaisRoute
+  AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAtendimentoRoute: AuthenticatedAtendimentoRoute,
+  AuthenticatedCheckinRoute: AuthenticatedCheckinRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFilaRoute: AuthenticatedFilaRoute,
+  AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
+  AuthenticatedProfissionaisRoute: AuthenticatedProfissionaisRoute,
+  AuthenticatedSalasRoute: AuthenticatedSalasRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  PainelRoute: PainelRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
