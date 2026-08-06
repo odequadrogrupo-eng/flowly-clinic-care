@@ -125,7 +125,10 @@ export async function toggleClinicStatusBySuperadmin(
           blocked_reason: null,
         };
 
-  const { error } = await supabase.from("clinics").update(payload as never).eq("id", clinicId);
+  const { error } = await supabase
+    .from("clinics")
+    .update(payload as never)
+    .eq("id", clinicId);
   if (error) throw error;
 }
 

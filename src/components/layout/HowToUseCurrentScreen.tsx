@@ -66,8 +66,8 @@ export function HowToUseCurrentScreen({ role }: { role: AppRole }) {
           </div>
 
           <div>
-            <a className="text-primary underline" href={`/ajuda?artigo=${article.id}`}>
-              Abrir artigo completo na Central de Ajuda
+            <a className="text-primary underline" href={`/manual#${article.id}`}>
+              Abrir artigo completo no Manual
             </a>
           </div>
         </div>

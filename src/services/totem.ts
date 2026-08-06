@@ -87,12 +87,32 @@ export type PanelSettingsRow = {
   name: string;
   enabled: boolean;
   public_token: string;
+  panel_title: string;
+  current_call_label: string;
+  previous_calls_label: string;
+  privacy_message: string;
   show_mode: "ticket_only" | "first_name" | "name_abbreviated";
+  show_ticket: boolean;
+  show_patient_name: boolean;
+  show_professional: boolean;
+  show_called_time: boolean;
   show_destination: boolean;
+  show_room: boolean;
+  show_desk: boolean;
+  show_office: boolean;
+  show_priority: boolean;
+  room_label: string;
+  desk_label: string;
+  office_label: string;
+  reception_label: string;
   full_screen: boolean;
   show_clock: boolean;
   show_latest_calls: boolean;
   latest_calls_limit: number;
+  highlight_seconds: number;
+  brand_primary: string | null;
+  brand_secondary: string | null;
+  logo_override_url: string | null;
   sound_enabled: boolean;
   voice_enabled: boolean;
   voice_name: string | null;
@@ -150,7 +170,7 @@ export async function getPanelSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("panel_settings" as never)
     .select(
-      "clinic_id, name, enabled, public_token, show_mode, show_destination, full_screen, show_clock, show_latest_calls, latest_calls_limit, sound_enabled, voice_enabled, voice_name, voice_volume, voice_rate, voice_pitch, voice_repeat_count, voice_repeat_interval_seconds, phrase_template" as never,
+      "clinic_id, name, enabled, public_token, panel_title, current_call_label, previous_calls_label, privacy_message, show_mode, show_ticket, show_patient_name, show_professional, show_called_time, show_destination, show_room, show_desk, show_office, show_priority, room_label, desk_label, office_label, reception_label, full_screen, show_clock, show_latest_calls, latest_calls_limit, highlight_seconds, brand_primary, brand_secondary, logo_override_url, sound_enabled, voice_enabled, voice_name, voice_volume, voice_rate, voice_pitch, voice_repeat_count, voice_repeat_interval_seconds, phrase_template" as never,
     )
     .eq("clinic_id", clinicId)
     .single();

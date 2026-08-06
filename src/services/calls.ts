@@ -8,6 +8,7 @@ export type PanelCallRow = {
   called_at: string;
   queue_id: string | null;
   ticket_code: string | null;
+  ticket_priority: boolean | null;
 };
 
 export async function listRecentCalls(clinicId: string, limit = 6) {
@@ -24,27 +25,31 @@ export async function listRecentCalls(clinicId: string, limit = 6) {
   const queueIds = calls.map((call) => call.queue_id).filter(Boolean) as string[];
 
   if (queueIds.length === 0) {
-    return calls.map((call) => ({ ...call, ticket_code: null }));
+    return calls.map((call) => ({ ...call, ticket_code: null, ticket_priority: null }));
   }
 
   const { data: tickets, error: ticketsError } = await supabase
     .from("tickets" as never)
-    .select("queue_id, code" as never)
+    .select("queue_id, code, priority" as never)
     .eq("clinic_id", clinicId)
     .in("queue_id", queueIds);
 
   if (ticketsError) throw ticketsError;
 
   const ticketByQueueId = new Map(
-    ((tickets ?? []) as Array<{ queue_id: string | null; code: string | null }>).map((ticket) => [
-      ticket.queue_id,
-      ticket.code,
-    ]),
+    (
+      (tickets ?? []) as Array<{
+        queue_id: string | null;
+        code: string | null;
+        priority: boolean | null;
+      }>
+    ).map((ticket) => [ticket.queue_id, ticket]),
   );
 
   return calls.map((call) => ({
     ...call,
-    ticket_code: call.queue_id ? (ticketByQueueId.get(call.queue_id) ?? null) : null,
+    ticket_code: call.queue_id ? (ticketByQueueId.get(call.queue_id)?.code ?? null) : null,
+    ticket_priority: call.queue_id ? (ticketByQueueId.get(call.queue_id)?.priority ?? null) : null,
   }));
 }
 
@@ -68,27 +73,31 @@ export async function listCallHistory(
   const calls = (data ?? []) as Array<PanelCallRow>;
   const queueIds = calls.map((call) => call.queue_id).filter(Boolean) as string[];
   if (queueIds.length === 0) {
-    return calls.map((call) => ({ ...call, ticket_code: null }));
+    return calls.map((call) => ({ ...call, ticket_code: null, ticket_priority: null }));
   }
 
   const { data: tickets, error: ticketsError } = await supabase
     .from("tickets" as never)
-    .select("queue_id, code" as never)
+    .select("queue_id, code, priority" as never)
     .eq("clinic_id", clinicId)
     .in("queue_id", queueIds);
 
   if (ticketsError) throw ticketsError;
 
   const ticketByQueueId = new Map(
-    ((tickets ?? []) as Array<{ queue_id: string | null; code: string | null }>).map((ticket) => [
-      ticket.queue_id,
-      ticket.code,
-    ]),
+    (
+      (tickets ?? []) as Array<{
+        queue_id: string | null;
+        code: string | null;
+        priority: boolean | null;
+      }>
+    ).map((ticket) => [ticket.queue_id, ticket]),
   );
 
   return calls.map((call) => ({
     ...call,
-    ticket_code: call.queue_id ? (ticketByQueueId.get(call.queue_id) ?? null) : null,
+    ticket_code: call.queue_id ? (ticketByQueueId.get(call.queue_id)?.code ?? null) : null,
+    ticket_priority: call.queue_id ? (ticketByQueueId.get(call.queue_id)?.priority ?? null) : null,
   }));
 }
 

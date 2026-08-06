@@ -67,7 +67,11 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 
 function SettingsPage() {
   return (
-    <Page title="Configurações" description="Dados institucionais da clínica" allowed={["admin"]}>
+    <Page
+      title="Configurações"
+      description="Dados institucionais da clínica"
+      allowed={["superadmin", "admin"]}
+    >
       {(profile) => (
         <SettingsContent
           clinicId={profile.clinic_id}
@@ -697,6 +701,46 @@ function SettingsContent({
               onChange={(e) => setPanelForm({ ...panelForm, name: e.target.value })}
               placeholder="Nome do painel"
             />
+            <Input
+              value={panelForm.panel_title}
+              onChange={(e) => setPanelForm({ ...panelForm, panel_title: e.target.value })}
+              placeholder="Título do painel"
+            />
+            <Input
+              value={panelForm.current_call_label}
+              onChange={(e) => setPanelForm({ ...panelForm, current_call_label: e.target.value })}
+              placeholder="Texto de chamada atual"
+            />
+            <Input
+              value={panelForm.previous_calls_label}
+              onChange={(e) => setPanelForm({ ...panelForm, previous_calls_label: e.target.value })}
+              placeholder="Texto de chamadas anteriores"
+            />
+            <Input
+              value={panelForm.privacy_message}
+              onChange={(e) => setPanelForm({ ...panelForm, privacy_message: e.target.value })}
+              placeholder="Mensagem de privacidade"
+            />
+            <Input
+              value={panelForm.panel_title}
+              onChange={(e) => setPanelForm({ ...panelForm, panel_title: e.target.value })}
+              placeholder="Título do painel"
+            />
+            <Input
+              value={panelForm.current_call_label}
+              onChange={(e) => setPanelForm({ ...panelForm, current_call_label: e.target.value })}
+              placeholder="Texto de chamada atual"
+            />
+            <Input
+              value={panelForm.previous_calls_label}
+              onChange={(e) => setPanelForm({ ...panelForm, previous_calls_label: e.target.value })}
+              placeholder="Texto de chamadas anteriores"
+            />
+            <Input
+              value={panelForm.privacy_message}
+              onChange={(e) => setPanelForm({ ...panelForm, privacy_message: e.target.value })}
+              placeholder="Mensagem de privacidade"
+            />
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -704,6 +748,42 @@ function SettingsContent({
                 onChange={(e) => setPanelForm({ ...panelForm, enabled: e.target.checked })}
               />
               Painel ativo
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_ticket}
+                onChange={(e) => setPanelForm({ ...panelForm, show_ticket: e.target.checked })}
+              />
+              Exibir número da senha
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_patient_name}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, show_patient_name: e.target.checked })
+                }
+              />
+              Exibir nome do paciente
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_professional}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, show_professional: e.target.checked })
+                }
+              />
+              Exibir médico
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_called_time}
+                onChange={(e) => setPanelForm({ ...panelForm, show_called_time: e.target.checked })}
+              />
+              Exibir horário
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -730,6 +810,74 @@ function SettingsContent({
                 }
               />
               Exibir últimas chamadas
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_ticket}
+                onChange={(e) => setPanelForm({ ...panelForm, show_ticket: e.target.checked })}
+              />
+              Exibir número da senha
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_patient_name}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, show_patient_name: e.target.checked })
+                }
+              />
+              Exibir nome do paciente
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_professional}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, show_professional: e.target.checked })
+                }
+              />
+              Exibir médico
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_called_time}
+                onChange={(e) => setPanelForm({ ...panelForm, show_called_time: e.target.checked })}
+              />
+              Exibir horário
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_destination}
+                onChange={(e) => setPanelForm({ ...panelForm, show_destination: e.target.checked })}
+              />
+              Exibir destino
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_priority}
+                onChange={(e) => setPanelForm({ ...panelForm, show_priority: e.target.checked })}
+              />
+              Exibir prioridade
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_destination}
+                onChange={(e) => setPanelForm({ ...panelForm, show_destination: e.target.checked })}
+              />
+              Exibir destino
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={panelForm.show_priority}
+                onChange={(e) => setPanelForm({ ...panelForm, show_priority: e.target.checked })}
+              />
+              Exibir prioridade
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -852,6 +1000,131 @@ function SettingsContent({
                   setPanelForm({ ...panelForm, latest_calls_limit: Number(e.target.value) || 5 })
                 }
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Tempo de destaque da chamada (s)</Label>
+              <Input
+                type="number"
+                min="4"
+                max="30"
+                value={panelForm.highlight_seconds}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, highlight_seconds: Number(e.target.value) || 8 })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Sala</Label>
+              <Input
+                value={panelForm.room_label}
+                onChange={(e) => setPanelForm({ ...panelForm, room_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Guichê</Label>
+              <Input
+                value={panelForm.desk_label}
+                onChange={(e) => setPanelForm({ ...panelForm, desk_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Consultório</Label>
+              <Input
+                value={panelForm.office_label}
+                onChange={(e) => setPanelForm({ ...panelForm, office_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Recepção</Label>
+              <Input
+                value={panelForm.reception_label}
+                onChange={(e) => setPanelForm({ ...panelForm, reception_label: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border p-4">
+            <p className="text-sm font-semibold">Pré-visualização em tempo real</p>
+            <div className="space-y-2">
+              <Label>Tempo de destaque da chamada (s)</Label>
+              <Input
+                type="number"
+                min="4"
+                max="30"
+                value={panelForm.highlight_seconds}
+                onChange={(e) =>
+                  setPanelForm({ ...panelForm, highlight_seconds: Number(e.target.value) || 8 })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Sala</Label>
+              <Input
+                value={panelForm.room_label}
+                onChange={(e) => setPanelForm({ ...panelForm, room_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Guichê</Label>
+              <Input
+                value={panelForm.desk_label}
+                onChange={(e) => setPanelForm({ ...panelForm, desk_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Consultório</Label>
+              <Input
+                value={panelForm.office_label}
+                onChange={(e) => setPanelForm({ ...panelForm, office_label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rótulo de Recepção</Label>
+              <Input
+                value={panelForm.reception_label}
+                onChange={(e) => setPanelForm({ ...panelForm, reception_label: e.target.value })}
+              />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              <div className="mt-4 rounded-xl border p-4">
+                <p className="text-sm font-semibold">Pré-visualização em tempo real</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {panelForm.panel_title || "Painel de chamadas"}
+                </p>
+                <div className="mt-3 rounded-xl bg-primary p-4 text-primary-foreground">
+                  <p className="text-xs uppercase opacity-80">
+                    {panelForm.current_call_label || "Chamando agora"}
+                  </p>
+                  {panelForm.show_ticket ? <p className="mt-2 text-4xl font-black">P-023</p> : null}
+                  {panelForm.show_patient_name ? (
+                    <p className="mt-1 text-2xl font-bold">Carla M.</p>
+                  ) : null}
+                  {panelForm.show_destination ? (
+                    <p className="mt-2 text-xl font-semibold">
+                      {panelForm.room_label || "Sala"} 04
+                    </p>
+                  ) : null}
+                  {panelForm.show_professional ? (
+                    <p className="mt-1 text-sm opacity-85">Dr. Diego Alves</p>
+                  ) : null}
+                </div>
+              </div>
+              {panelForm.panel_title || "Painel de chamadas"}
+            </p>
+            <div className="mt-3 rounded-xl bg-primary p-4 text-primary-foreground">
+              <p className="text-xs uppercase opacity-80">
+                {panelForm.current_call_label || "Chamando agora"}
+              </p>
+              {panelForm.show_ticket ? <p className="mt-2 text-4xl font-black">P-023</p> : null}
+              {panelForm.show_patient_name ? (
+                <p className="mt-1 text-2xl font-bold">Carla M.</p>
+              ) : null}
+              {panelForm.show_destination ? (
+                <p className="mt-2 text-xl font-semibold">{panelForm.room_label || "Sala"} 04</p>
+              ) : null}
+              {panelForm.show_professional ? (
+                <p className="mt-1 text-sm opacity-85">Dr. Diego Alves</p>
+              ) : null}
             </div>
           </div>
           <div className="mt-4 rounded-xl border p-3">

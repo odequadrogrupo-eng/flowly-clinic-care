@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useAuth";
 import { useRealtime } from "@/hooks/useRealtime";
+import { formatPanelDestination } from "@/lib/panel-display";
 import { formatTime } from "@/lib/queue";
 import { formatPanelDisplayName, listRecentCalls } from "@/services/calls";
 import { getPanelSettings } from "@/services/totem";
@@ -55,6 +56,7 @@ function DisplayPanel() {
 
   const current = data?.[0];
   const previous = (data ?? []).slice(1, 5);
+  const panelConfig = panelSettingsQuery.data;
 
   function buildVoiceText(
     template: string,
@@ -107,12 +109,17 @@ function DisplayPanel() {
     setLastSpoken(current.id);
     const ticketLike = current.ticket_code ?? current.display_name;
     const firstName = current.display_name.split(" ")[0] ?? current.display_name;
-    const destination = current.room_name ? `consultório ${current.room_name}` : "recepção";
+    const destination = formatPanelDestination(current.room_name, {
+      roomLabel: panelConfig?.room_label ?? "Sala",
+      deskLabel: panelConfig?.desk_label ?? "Guichê",
+      officeLabel: panelConfig?.office_label ?? "Consultório",
+      receptionLabel: panelConfig?.reception_label ?? "Recepção",
+    });
     const phraseTemplate =
       panelSettingsQuery.data?.phrase_template ?? "Senha {{ticket}}, dirigir-se a {{destination}}.";
     const text = buildVoiceText(phraseTemplate, { ticket: ticketLike, destination, firstName });
     speakWithSettings(text);
-  }, [current, sound, lastSpoken, profile?.clinics?.voice_enabled, panelSettingsQuery.data]);
+  }, [current, sound, lastSpoken, profile?.clinics?.voice_enabled, panelConfig]);
 
   if (isLoading) return <LoadingState label="Carregando painel..." />;
 
@@ -140,7 +147,9 @@ function DisplayPanel() {
           <p className="text-sm uppercase tracking-widest opacity-75">
             {profile.clinics?.name ?? "Clínica"}
           </p>
-          <h1 className="text-2xl font-bold sm:text-3xl">Painel de chamadas</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">
+            {panelConfig?.panel_title ?? "Painel de chamadas"}
+          </h1>
         </div>
         <Button
           variant="secondary"
@@ -156,20 +165,44 @@ function DisplayPanel() {
       <section className="mt-6 rounded-3xl bg-primary-foreground/10 p-6 text-center sm:p-12">
         {current ? (
           <>
-            <p className="text-sm uppercase tracking-[0.3em] opacity-80">Chamando agora</p>
-            <p className="mt-4 text-4xl font-black leading-tight sm:text-7xl">
-              {formatPanelDisplayName(
-                current,
-                panelSettingsQuery.data?.show_mode ?? "name_abbreviated",
-              )}
+            <p className="text-sm uppercase tracking-[0.3em] opacity-80">
+              {panelConfig?.current_call_label ?? "Chamando agora"}
             </p>
-            <p className="mt-6 text-2xl font-semibold sm:text-4xl">
-              {current.room_name ? `Sala ${current.room_name}` : "Recepção"}
-            </p>
-            <p className="mt-2 text-lg opacity-85 sm:text-2xl">
-              {current.professional_name ?? "Equipe de atendimento"} ·{" "}
-              {formatTime(current.called_at)}
-            </p>
+
+            {panelConfig?.show_ticket !== false ? (
+              <p className="mt-3 text-5xl font-black leading-tight sm:text-8xl">
+                {current.ticket_code ?? "-"}
+              </p>
+            ) : null}
+
+            {panelConfig?.show_patient_name !== false ? (
+              <p className="mt-3 text-3xl font-bold leading-tight sm:text-5xl">
+                {formatPanelDisplayName(current, panelConfig?.show_mode ?? "name_abbreviated")}
+              </p>
+            ) : null}
+
+            {panelConfig?.show_destination !== false ? (
+              <p className="mt-6 text-2xl font-semibold sm:text-4xl">
+                {formatPanelDestination(current.room_name, {
+                  roomLabel: panelConfig?.room_label ?? "Sala",
+                  deskLabel: panelConfig?.desk_label ?? "Guichê",
+                  officeLabel: panelConfig?.office_label ?? "Consultório",
+                  receptionLabel: panelConfig?.reception_label ?? "Recepção",
+                })}
+              </p>
+            ) : null}
+
+            {panelConfig?.show_professional !== false || panelConfig?.show_called_time !== false ? (
+              <p className="mt-2 text-lg opacity-85 sm:text-2xl">
+                {panelConfig?.show_professional !== false
+                  ? (current.professional_name ?? "Equipe de atendimento")
+                  : ""}
+                {panelConfig?.show_professional !== false && panelConfig?.show_called_time !== false
+                  ? " · "
+                  : ""}
+                {panelConfig?.show_called_time !== false ? formatTime(current.called_at) : ""}
+              </p>
+            ) : null}
           </>
         ) : (
           <>
@@ -181,19 +214,33 @@ function DisplayPanel() {
 
       {previous.length > 0 ? (
         <section className="mt-6">
-          <h2 className="text-sm uppercase tracking-[0.2em] opacity-75">Chamadas anteriores</h2>
+          <h2 className="text-sm uppercase tracking-[0.2em] opacity-75">
+            {panelConfig?.previous_calls_label ?? "Chamadas anteriores"}
+          </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {previous.map((call) => (
               <div key={call.id} className="rounded-2xl bg-primary-foreground/10 p-4">
-                <p className="text-xl font-bold">
-                  {formatPanelDisplayName(
-                    call,
-                    panelSettingsQuery.data?.show_mode ?? "name_abbreviated",
-                  )}
-                </p>
-                <p className="mt-1 text-sm opacity-85">
-                  {call.room_name ?? "Recepção"} · {formatTime(call.called_at)}
-                </p>
+                {panelConfig?.show_ticket !== false ? (
+                  <p className="text-2xl font-black">{call.ticket_code ?? "-"}</p>
+                ) : null}
+                {panelConfig?.show_patient_name !== false ? (
+                  <p className="text-xl font-bold">
+                    {formatPanelDisplayName(call, panelConfig?.show_mode ?? "name_abbreviated")}
+                  </p>
+                ) : null}
+                {panelConfig?.show_destination !== false ? (
+                  <p className="mt-1 text-sm opacity-85">
+                    {formatPanelDestination(call.room_name, {
+                      roomLabel: panelConfig?.room_label ?? "Sala",
+                      deskLabel: panelConfig?.desk_label ?? "Guichê",
+                      officeLabel: panelConfig?.office_label ?? "Consultório",
+                      receptionLabel: panelConfig?.reception_label ?? "Recepção",
+                    })}
+                  </p>
+                ) : null}
+                {panelConfig?.show_called_time !== false ? (
+                  <p className="mt-1 text-sm opacity-85">{formatTime(call.called_at)}</p>
+                ) : null}
               </div>
             ))}
           </div>
@@ -201,7 +248,8 @@ function DisplayPanel() {
       ) : null}
 
       <p className="mt-8 text-center text-xs opacity-70">
-        Por privacidade, exibimos apenas o primeiro nome e a inicial do sobrenome do paciente.
+        {panelConfig?.privacy_message ??
+          "Por privacidade, exibimos apenas o primeiro nome e a inicial do sobrenome do paciente."}
       </p>
     </main>
   );

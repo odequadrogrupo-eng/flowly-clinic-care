@@ -138,6 +138,12 @@ const navItems: NavItem[] = [
     icon: Presentation,
     roles: ["superadmin", "admin"],
   },
+  {
+    to: "/manual",
+    label: "Manual Público",
+    icon: BookOpen,
+    roles: ["superadmin", "admin"],
+  },
 ];
 
 export function Brand({

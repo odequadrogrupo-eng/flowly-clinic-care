@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as ApresentacaoRouteImport } from './routes/apresentacao'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ManualRouteImport } from './routes/manual'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
@@ -51,6 +52,11 @@ const ApresentacaoRoute = ApresentacaoRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManualRoute = ManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelRoute = PainelRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
+  '/manual': typeof ManualRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/agenda': typeof AuthenticatedAgendaRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
+  '/manual': typeof ManualRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/agenda': typeof AuthenticatedAgendaRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
+  '/manual': typeof ManualRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/'
     | '/apresentacao'
     | '/auth'
+    | '/manual'
     | '/painel'
     | '/reset-password'
     | '/agenda'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/'
     | '/apresentacao'
     | '/auth'
+    | '/manual'
     | '/painel'
     | '/reset-password'
     | '/agenda'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/apresentacao'
     | '/auth'
+    | '/manual'
     | '/painel'
     | '/reset-password'
     | '/_authenticated/agenda'
@@ -319,6 +331,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ApresentacaoRoute: typeof ApresentacaoRoute
   AuthRoute: typeof AuthRoute
+  ManualRoute: typeof ManualRoute
   PainelRoute: typeof PainelRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   TotemTokenRoute: typeof TotemTokenRoute
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manual': {
+      id: '/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof ManualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/painel': {
@@ -554,6 +574,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ApresentacaoRoute: ApresentacaoRoute,
   AuthRoute: AuthRoute,
+  ManualRoute: ManualRoute,
   PainelRoute: PainelRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   TotemTokenRoute: TotemTokenRoute,

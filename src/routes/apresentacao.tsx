@@ -70,6 +70,12 @@ function CommercialPresentationPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
           <Brand fallbackText="ClinicFlow" />
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <a href="/manual">Manual público</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/auth">Entrar no sistema</a>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setMenuVisible((v) => !v)}>
               {menuVisible ? "Ocultar índice" : "Mostrar índice"}
             </Button>
