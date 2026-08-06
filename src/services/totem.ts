@@ -15,6 +15,13 @@ export type KioskPublicConfig = {
   qr_enabled?: boolean;
   paper_size?: "58mm" | "80mm";
   print_auto?: boolean;
+  print_method?: "browser" | "webusb" | "webserial" | "agent";
+  browser_fallback_enabled?: boolean;
+  webusb_enabled?: boolean;
+  webserial_enabled?: boolean;
+  local_agent_endpoint?: string;
+  welcome_message?: string;
+  kiosk_mode?: boolean;
   priority_help_text?: string;
 };
 
@@ -69,6 +76,7 @@ export type KioskSettingsRow = {
   logo_url: string | null;
   paper_size: "58mm" | "80mm";
   print_auto: boolean;
+  print_method: "browser" | "webusb" | "webserial" | "agent";
   qr_enabled: boolean;
   priority_help_text: string;
   kiosk_mode: boolean;
@@ -112,7 +120,7 @@ export async function getKioskSettings(clinicId: string) {
   const { data, error } = await supabase
     .from("kiosk_settings" as never)
     .select(
-      "clinic_id, enabled, public_token, allow_normal, allow_priority, normal_prefix, priority_prefix, custom_text, footer_text, logo_url, paper_size, print_auto, qr_enabled, priority_help_text, kiosk_mode" as never,
+      "clinic_id, enabled, public_token, allow_normal, allow_priority, normal_prefix, priority_prefix, custom_text, footer_text, logo_url, paper_size, print_auto, print_method, qr_enabled, priority_help_text, kiosk_mode" as never,
     )
     .eq("clinic_id", clinicId)
     .single();

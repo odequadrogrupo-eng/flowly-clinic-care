@@ -34,11 +34,13 @@ import {
 import { logAudit } from "@/lib/queue";
 import { updateClinicById, type ClinicFormValues } from "@/services/clinic";
 import {
+  createClinicAuthUser,
+  deleteClinicAuthUser,
   createClinicInvite,
   listClinicUsers,
   listPendingInvites,
   revokeInvite,
-  updateClinicUser,
+  updateClinicAuthUser,
 } from "@/services/user-permissions";
 import {
   getDemoRunActorName,
@@ -80,7 +82,7 @@ function DashboardPage() {
     <Page
       title="Dashboard"
       description="Visão geral do atendimento de hoje"
-      allowed={["admin", "receptionist", "attendant", "professional"]}
+      allowed={["admin", "receptionist", "professional"]}
     >
       {(profile) => <DashboardContent profile={profile} />}
     </Page>
@@ -95,11 +97,17 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("receptionist");
   const [lastInviteUrl, setLastInviteUrl] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<AppRole>("receptionist");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [lastGeneratedPassword, setLastGeneratedPassword] = useState("");
   const [demoResult, setDemoResult] = useState<DemoSeedSummary | null>(null);
   const [demoProgressLabel, setDemoProgressLabel] = useState<string | null>(null);
 
   const [clinicForm, setClinicForm] = useState<ClinicFormValues>({
     name: profile.clinics?.name ?? "",
+    tenant_slug: profile.clinics?.tenant_slug ?? "",
     legal_name: profile.clinics?.legal_name ?? "",
     document: profile.clinics?.document ?? "",
     phone: profile.clinics?.phone ?? "",
@@ -107,12 +115,17 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
     address: profile.clinics?.address ?? "",
     opening_hours: profile.clinics?.opening_hours ?? "",
     logo_url: profile.clinics?.logo_url ?? "",
+    color_primary: "",
+    color_primary_foreground: "",
+    color_accent: "",
+    color_accent_foreground: "",
     voice_enabled: profile.clinics?.voice_enabled ?? true,
   });
 
   useEffect(() => {
     setClinicForm({
       name: profile.clinics?.name ?? "",
+      tenant_slug: profile.clinics?.tenant_slug ?? "",
       legal_name: profile.clinics?.legal_name ?? "",
       document: profile.clinics?.document ?? "",
       phone: profile.clinics?.phone ?? "",
@@ -120,6 +133,10 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
       address: profile.clinics?.address ?? "",
       opening_hours: profile.clinics?.opening_hours ?? "",
       logo_url: profile.clinics?.logo_url ?? "",
+      color_primary: "",
+      color_primary_foreground: "",
+      color_accent: "",
+      color_accent_foreground: "",
       voice_enabled: profile.clinics?.voice_enabled ?? true,
     });
   }, [profile.clinics]);
@@ -150,31 +167,111 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
     queryFn: () => listPendingInvites(clinicId),
   });
 
-  const updateUserPermissionMutation = useMutation({
-    mutationFn: async (input: {
-      userId: string;
-      role: AppRole;
-      active: boolean;
-      fullName: string;
-    }) => {
-      await updateClinicUser(
+  const createAuthUserMutation = useMutation({
+    mutationFn: async () => {
+      const result = await createClinicAuthUser({
+        email: newUserEmail,
+        fullName: newUserName,
+        role: newUserRole,
+        active: true,
+        password: newUserPassword,
+      });
+
+      await logAudit({
         clinicId,
-        input.userId,
-        {
-          role: input.role,
-          active: input.active,
-          full_name: input.fullName,
+        action: "create",
+        entity: "auth_user",
+        entityId: result.user.id,
+        details: {
+          email: result.user.email,
+          role: result.user.role,
+          via: "dashboard_auth_crud",
         },
-        profile.id,
-      );
-      await logAudit({ clinicId, action: "update", entity: "profiles", entityId: input.userId });
+      });
+
+      return result;
     },
-    onSuccess: () => {
-      toast.success("Permissao atualizada");
+    onSuccess: async (result) => {
+      setLastGeneratedPassword(result.generatedPassword);
+      setNewUserEmail("");
+      setNewUserName("");
+      setNewUserPassword("");
+      toast.success("Usuário criado no Auth e vinculado à clínica");
       queryClient.invalidateQueries({ queryKey: ["clinic-users", clinicId] });
     },
     onError: (error: Error) => {
-      toast.error("Erro ao atualizar permissao", { description: error.message });
+      toast.error("Erro ao criar usuário", { description: error.message });
+    },
+  });
+
+  const updateAuthUserMutation = useMutation({
+    mutationFn: async (input: {
+      userId: string;
+      email: string;
+      role: AppRole;
+      active: boolean;
+      fullName: string;
+      password?: string;
+    }) => {
+      const payload: {
+        userId: string;
+        email: string;
+        fullName: string;
+        role: AppRole;
+        active: boolean;
+        password?: string;
+      } = {
+        userId: input.userId,
+        email: input.email,
+        fullName: input.fullName,
+        role: input.role,
+        active: input.active,
+      };
+      if (input.password) payload.password = input.password;
+
+      const result = await updateClinicAuthUser(payload);
+
+      await logAudit({
+        clinicId,
+        action: "update",
+        entity: "auth_user",
+        entityId: input.userId,
+        details: {
+          email: input.email,
+          role: input.role,
+          active: input.active,
+          via: "dashboard_auth_crud",
+        },
+      });
+
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Usuário atualizado no Auth");
+      queryClient.invalidateQueries({ queryKey: ["clinic-users", clinicId] });
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao atualizar usuário", { description: error.message });
+    },
+  });
+
+  const deleteAuthUserMutation = useMutation({
+    mutationFn: async (input: { userId: string; email: string }) => {
+      await deleteClinicAuthUser(input.userId);
+      await logAudit({
+        clinicId,
+        action: "delete",
+        entity: "auth_user",
+        entityId: input.userId,
+        details: { email: input.email, via: "dashboard_auth_crud" },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Usuário removido do Auth e da clínica");
+      queryClient.invalidateQueries({ queryKey: ["clinic-users", clinicId] });
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao remover usuário", { description: error.message });
     },
   });
 
@@ -615,8 +712,68 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
           <section className="card-soft p-5">
             <h2 className="font-semibold">Usuarios e permissoes</h2>
             <p className="text-sm text-muted-foreground">
-              Gerencie perfis da clinica e convites de acesso.
+              CRUD de usuários integrado ao Supabase Auth + convites de acesso.
             </p>
+
+            <div className="mt-4 space-y-3 rounded-xl border p-3">
+              <h3 className="text-sm font-semibold">Criar usuário direto no sistema</h3>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <Input
+                  placeholder="Nome completo"
+                  value={newUserName}
+                  onChange={(event) => setNewUserName(event.target.value)}
+                />
+                <Input
+                  placeholder="email@clinica.com"
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(event) => setNewUserEmail(event.target.value)}
+                />
+                <Select value={newUserRole} onValueChange={(value: AppRole) => setNewUserRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="receptionist">Recepcionista</SelectItem>
+                    <SelectItem value="attendant">Atendente</SelectItem>
+                    <SelectItem value="professional">Profissional</SelectItem>
+                    <SelectItem value="public_display">Painel publico</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Senha inicial (opcional)"
+                  value={newUserPassword}
+                  onChange={(event) => setNewUserPassword(event.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={() => createAuthUserMutation.mutate()}
+                  disabled={createAuthUserMutation.isPending}
+                >
+                  {createAuthUserMutation.isPending ? "Criando..." : "Criar usuário"}
+                </Button>
+                {lastGeneratedPassword ? (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      await navigator.clipboard
+                        .writeText(lastGeneratedPassword)
+                        .catch(() => undefined);
+                      toast.success("Senha temporária copiada");
+                    }}
+                  >
+                    Copiar senha gerada
+                  </Button>
+                ) : null}
+              </div>
+              {lastGeneratedPassword ? (
+                <p className="text-xs text-muted-foreground">
+                  Senha temporária gerada: {lastGeneratedPassword}
+                </p>
+              ) : null}
+            </div>
 
             <div className="mt-4 grid gap-3 rounded-xl border p-3 md:grid-cols-[1fr_220px_auto]">
               <Input
@@ -666,26 +823,42 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
               {(usersQuery.data ?? []).map((user) => (
                 <div
                   key={user.id}
-                  className="grid gap-2 rounded-xl border p-3 md:grid-cols-[1fr_220px_120px_auto] md:items-center"
+                  className="grid gap-2 rounded-xl border p-3 md:grid-cols-[1fr_1fr_220px_120px_auto_auto] md:items-center"
                 >
                   <Input
                     defaultValue={user.full_name}
                     onBlur={(event) => {
                       const name = event.target.value;
                       if (name === user.full_name) return;
-                      updateUserPermissionMutation.mutate({
+                      updateAuthUserMutation.mutate({
                         userId: user.id,
+                        email: user.email ?? "",
                         role: user.role,
                         active: user.active,
                         fullName: name,
                       });
                     }}
                   />
+                  <Input
+                    defaultValue={user.email ?? ""}
+                    onBlur={(event) => {
+                      const email = event.target.value;
+                      if (email === (user.email ?? "")) return;
+                      updateAuthUserMutation.mutate({
+                        userId: user.id,
+                        email,
+                        role: user.role,
+                        active: user.active,
+                        fullName: user.full_name,
+                      });
+                    }}
+                  />
                   <Select
                     defaultValue={user.role}
                     onValueChange={(value: AppRole) => {
-                      updateUserPermissionMutation.mutate({
+                      updateAuthUserMutation.mutate({
                         userId: user.id,
+                        email: user.email ?? "",
                         role: value,
                         active: user.active,
                         fullName: user.full_name,
@@ -708,8 +881,9 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                       type="checkbox"
                       checked={user.active}
                       onChange={(event) => {
-                        updateUserPermissionMutation.mutate({
+                        updateAuthUserMutation.mutate({
                           userId: user.id,
+                          email: user.email ?? "",
                           role: user.role,
                           active: event.target.checked,
                           fullName: user.full_name,
@@ -719,6 +893,23 @@ function DashboardContent({ profile }: { profile: ProfileWithClinic }) {
                     Ativo
                   </Label>
                   <p className="text-xs text-muted-foreground">{roleLabels[user.role]}</p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      const confirmation = window.prompt(
+                        `Para remover ${user.email ?? user.full_name}, digite REMOVER`,
+                      );
+                      if (confirmation !== "REMOVER") return;
+                      deleteAuthUserMutation.mutate({
+                        userId: user.id,
+                        email: user.email ?? "",
+                      });
+                    }}
+                    disabled={deleteAuthUserMutation.isPending || user.id === profile.id}
+                  >
+                    Remover
+                  </Button>
                 </div>
               ))}
               {(usersQuery.data ?? []).length === 0 ? (

@@ -13,7 +13,7 @@ type ClinicLogoProps = {
 export function ClinicLogo({
   src,
   alt,
-  fallbackText = "Club Medico",
+  fallbackText = "ClinicFlow",
   className,
   imgClassName,
 }: ClinicLogoProps) {

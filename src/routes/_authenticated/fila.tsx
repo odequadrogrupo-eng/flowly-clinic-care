@@ -82,7 +82,7 @@ function QueuePage() {
     <Page
       title="Fila de atendimento"
       description="Atualização em tempo real"
-      allowed={["admin", "receptionist", "attendant"]}
+      allowed={["admin", "receptionist"]}
       actions={
         <Button asChild size="sm">
           <Link to="/checkin">

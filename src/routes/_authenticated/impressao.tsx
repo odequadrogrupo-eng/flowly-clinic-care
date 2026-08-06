@@ -18,16 +18,16 @@ import {
 export const Route = createFileRoute("/_authenticated/impressao")({
   component: PrintPage,
   head: () => ({
-    meta: [{ title: "Impressão térmica — ClinicFlow" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Impressora — ClinicFlow" }, { name: "robots", content: "noindex" }],
   }),
 });
 
 function PrintPage() {
   return (
     <Page
-      title="Impressão térmica"
-      description="Teste e configuração de impressão"
-      allowed={["admin", "receptionist", "attendant"]}
+      title="Impressora"
+      description="Teste, configuração e diagnóstico da impressora"
+      allowed={["admin"]}
     >
       {(profile) => (
         <PrintContent
@@ -143,12 +143,28 @@ function PrintContent({
       </div>
 
       <div className="card-soft p-4">
-        <h2 className="font-semibold">Visualização prévia</h2>
+        <h2 className="font-semibold">Visualização do ticket</h2>
         <iframe
           title="print-preview"
           className="mt-3 h-[420px] w-full rounded-xl border"
           srcDoc={previewHtml}
         />
+      </div>
+
+      <div className="card-soft grid gap-3 p-4 md:grid-cols-2">
+        <div>
+          <h3 className="font-semibold">Diagnóstico</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Verifique conexão com dispositivo, permissões USB/Serial e disponibilidade do agente
+            local.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold">Calibração</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ajuste tamanho de papel, densidade, corte e alinhamento utilizando os testes rápidos.
+          </p>
+        </div>
       </div>
 
       <div className="card-soft p-4 text-sm text-muted-foreground">

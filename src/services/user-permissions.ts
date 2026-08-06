@@ -118,3 +118,110 @@ export async function revokeInvite(clinicId: string, inviteId: string) {
 
   if (error) throw error;
 }
+
+const createClinicAuthUserSchema = z.object({
+  email: z.string().trim().email("Informe um e-mail valido."),
+  fullName: z.string().trim().min(2, "Nome obrigatorio."),
+  role: z.enum(["admin", "receptionist", "attendant", "professional", "public_display"]),
+  active: z.boolean().default(true),
+  password: z
+    .string()
+    .trim()
+    .min(8, "Senha deve ter pelo menos 8 caracteres.")
+    .max(128, "Senha muito longa.")
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => (value ? value : undefined)),
+});
+
+const updateClinicAuthUserSchema = z.object({
+  userId: z.string().uuid("Usuário inválido."),
+  email: z.string().trim().email("Informe um e-mail valido."),
+  fullName: z.string().trim().min(2, "Nome obrigatorio."),
+  role: z.enum(["admin", "receptionist", "attendant", "professional", "public_display"]),
+  active: z.boolean(),
+  password: z
+    .string()
+    .trim()
+    .min(8, "Senha deve ter pelo menos 8 caracteres.")
+    .max(128, "Senha muito longa.")
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => (value ? value : undefined)),
+});
+
+export async function createClinicAuthUser(input: {
+  email: string;
+  fullName: string;
+  role: AppRole;
+  active?: boolean;
+  password?: string;
+}) {
+  const payload = createClinicAuthUserSchema.parse(input);
+  const { data, error } = await supabase.functions.invoke("manage-clinic-users", {
+    body: { action: "create", ...payload },
+  });
+  if (error) throw error;
+
+  const result = data as
+    | {
+        ok: true;
+        action: "create";
+        created: boolean;
+        user: { id: string; email: string; fullName: string; role: AppRole; active: boolean };
+        generatedPassword: string;
+      }
+    | { ok: false; error: string };
+
+  if (!result?.ok) {
+    throw new Error(result?.error ?? "Não foi possível criar usuário.");
+  }
+
+  return result;
+}
+
+export async function updateClinicAuthUser(input: {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: AppRole;
+  active: boolean;
+  password?: string;
+}) {
+  const payload = updateClinicAuthUserSchema.parse(input);
+  const { data, error } = await supabase.functions.invoke("manage-clinic-users", {
+    body: { action: "update", ...payload },
+  });
+  if (error) throw error;
+
+  const result = data as
+    | {
+        ok: true;
+        action: "update";
+        user: { id: string; email: string; fullName: string; role: AppRole; active: boolean };
+      }
+    | { ok: false; error: string };
+
+  if (!result?.ok) {
+    throw new Error(result?.error ?? "Não foi possível atualizar usuário.");
+  }
+
+  return result;
+}
+
+export async function deleteClinicAuthUser(userId: string) {
+  const { data, error } = await supabase.functions.invoke("manage-clinic-users", {
+    body: { action: "delete", userId },
+  });
+  if (error) throw error;
+
+  const result = data as
+    | { ok: true; action: "delete"; userId: string }
+    | { ok: false; error: string };
+
+  if (!result?.ok) {
+    throw new Error(result?.error ?? "Não foi possível remover usuário.");
+  }
+
+  return result;
+}
