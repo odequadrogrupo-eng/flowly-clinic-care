@@ -14,16 +14,494 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          clinic_id: string
+          created_at: string
+          details: Json | null
+          entity: string | null
+          entity_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          clinic_id: string
+          created_at?: string
+          details?: Json | null
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          clinic_id?: string
+          created_at?: string
+          details?: Json | null
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          called_at: string
+          clinic_id: string
+          created_at: string
+          display_name: string
+          id: string
+          patient_id: string | null
+          professional_id: string | null
+          professional_name: string | null
+          queue_id: string | null
+          room_id: string | null
+          room_name: string | null
+        }
+        Insert: {
+          called_at?: string
+          clinic_id: string
+          created_at?: string
+          display_name: string
+          id?: string
+          patient_id?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
+          queue_id?: string | null
+          room_id?: string | null
+          room_name?: string | null
+        }
+        Update: {
+          called_at?: string
+          clinic_id?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          patient_id?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
+          queue_id?: string | null
+          room_id?: string | null
+          room_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "queues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinics: {
+        Row: {
+          address: string | null
+          created_at: string
+          document: string | null
+          email: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          name: string
+          opening_hours: string | null
+          phone: string | null
+          updated_at: string
+          voice_enabled: boolean
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          name: string
+          opening_hours?: string | null
+          phone?: string | null
+          updated_at?: string
+          voice_enabled?: boolean
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          name?: string
+          opening_hours?: string | null
+          phone?: string | null
+          updated_at?: string
+          voice_enabled?: boolean
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          active: boolean
+          address: string | null
+          birth_date: string | null
+          clinic_id: string
+          cpf: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          birth_date?: string | null
+          clinic_id: string
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          birth_date?: string | null
+          clinic_id?: string
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professionals: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          professional_registration: string | null
+          profile_id: string | null
+          room_id: string | null
+          specialty: string | null
+          status: Database["public"]["Enums"]["professional_status"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          professional_registration?: string | null
+          profile_id?: string | null
+          room_id?: string | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["professional_status"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          professional_registration?: string | null
+          profile_id?: string | null
+          room_id?: string | null
+          specialty?: string | null
+          status?: Database["public"]["Enums"]["professional_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professionals_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professionals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professionals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queues: {
+        Row: {
+          called_at: string | null
+          cancelled_at: string | null
+          checkin_at: string
+          clinic_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          patient_id: string
+          position: number | null
+          priority: Database["public"]["Enums"]["queue_priority"]
+          professional_id: string | null
+          room_id: string | null
+          service_type: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["queue_status"]
+          updated_at: string
+        }
+        Insert: {
+          called_at?: string | null
+          cancelled_at?: string | null
+          checkin_at?: string
+          clinic_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          patient_id: string
+          position?: number | null
+          priority?: Database["public"]["Enums"]["queue_priority"]
+          professional_id?: string | null
+          room_id?: string | null
+          service_type?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["queue_status"]
+          updated_at?: string
+        }
+        Update: {
+          called_at?: string | null
+          cancelled_at?: string | null
+          checkin_at?: string
+          clinic_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          patient_id?: string
+          position?: number | null
+          priority?: Database["public"]["Enums"]["queue_priority"]
+          professional_id?: string | null
+          room_id?: string | null
+          service_type?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["queue_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queues_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queues_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queues_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          id: string
+          name: string
+          number: string | null
+          sector: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          id?: string
+          name: string
+          number?: string | null
+          sector?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          number?: string | null
+          sector?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_clinic_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: never; Returns: boolean }
+      my_professional_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "receptionist" | "professional" | "public_display"
+      professional_status: "available" | "busy" | "away"
+      queue_priority: "normal" | "priority"
+      queue_status:
+        | "waiting"
+        | "called"
+        | "in_service"
+        | "finished"
+        | "cancelled"
+        | "no_show"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +628,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "receptionist", "professional", "public_display"],
+      professional_status: ["available", "busy", "away"],
+      queue_priority: ["normal", "priority"],
+      queue_status: [
+        "waiting",
+        "called",
+        "in_service",
+        "finished",
+        "cancelled",
+        "no_show",
+      ],
+    },
   },
 } as const
