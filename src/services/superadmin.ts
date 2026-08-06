@@ -108,7 +108,11 @@ export async function toggleClinicStatusBySuperadmin(
   nextStatus: "active" | "inactive",
   reason?: string,
 ) {
-  const payload =
+  const payload: {
+    status: "active" | "inactive";
+    blocked_at: string | null;
+    blocked_reason: string | null;
+  } =
     nextStatus === "inactive"
       ? {
           status: "inactive",
