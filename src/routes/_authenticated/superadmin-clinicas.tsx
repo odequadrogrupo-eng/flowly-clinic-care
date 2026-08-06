@@ -63,7 +63,13 @@ function SuperadminClinicsPage() {
   );
 }
 
-function SuperadminClinicsContent({ role, currentClinicId }: { role: AppRole; currentClinicId: string }) {
+function SuperadminClinicsContent({
+  role,
+  currentClinicId,
+}: {
+  role: AppRole;
+  currentClinicId: string;
+}) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SuperadminClinicInput>(initialForm);
   const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
@@ -103,7 +109,8 @@ function SuperadminClinicsContent({ role, currentClinicId }: { role: AppRole; cu
       toast.success("Clínica excluída");
       queryClient.invalidateQueries({ queryKey: ["superadmin-clinics"] });
     },
-    onError: (error: Error) => toast.error("Erro ao excluir clínica", { description: error.message }),
+    onError: (error: Error) =>
+      toast.error("Erro ao excluir clínica", { description: error.message }),
   });
 
   const switchClinicMutation = useMutation({
@@ -384,10 +391,6 @@ function SuperadminClinicsContent({ role, currentClinicId }: { role: AppRole; cu
             </div>
           ))}
           {(clinicsQuery.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma clínica cadastrada.</p>
-          ) : null}
-          </Button>
-        </div>
             <p className="text-sm text-muted-foreground">Nenhuma clínica cadastrada.</p>
           ) : null}
         </div>
