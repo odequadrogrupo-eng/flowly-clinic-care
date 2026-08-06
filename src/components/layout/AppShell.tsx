@@ -29,8 +29,8 @@ const navItems: NavItem[] = [
   { to: "/checkin", label: "Check-in", icon: UserPlus, roles: ["admin", "receptionist"] },
   { to: "/atendimento", label: "Meu atendimento", icon: ClipboardList, roles: ["admin", "professional"] },
   { to: "/pacientes", label: "Pacientes", icon: Users, roles: ["admin", "receptionist"] },
-  { to: "/profissionais", label: "Profissionais", icon: Stethoscope, roles: ["admin", "receptionist"] },
-  { to: "/salas", label: "Salas", icon: DoorOpen, roles: ["admin", "receptionist"] },
+  { to: "/profissionais", label: "Profissionais", icon: Stethoscope, roles: ["admin"] },
+  { to: "/salas", label: "Salas", icon: DoorOpen, roles: ["admin"] },
   { to: "/painel", label: "Painel de chamada", icon: MonitorPlay, roles: ["admin", "receptionist", "professional", "public_display"] },
 ];
 
