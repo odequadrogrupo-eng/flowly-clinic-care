@@ -11,7 +11,7 @@
 Use exatamente:
 
 - Build Command: npm run build
-- Publish Directory: dist
+- Publish Directory: dist/client
 
 Essas configuracoes tambem estao em netlify.toml.
 
@@ -24,11 +24,11 @@ Crie:
 
 Nao adicionar SUPABASE_SERVICE_ROLE_KEY no frontend.
 
-## 4) SPA Redirect
+## 4) SSR do TanStack Start
 
-Ja configurado em netlify.toml:
-
-- /* -> /index.html (200)
+- Este projeto usa TanStack Start com SSR na Netlify.
+- O adaptador oficial gera cliente em dist/client e função SSR em .netlify/v1/functions/server.mjs.
+- Não use redirect global para /index.html, pois isso quebra o SSR.
 
 ## 5) Ajuste no Supabase Auth
 

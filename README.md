@@ -72,8 +72,8 @@ npm run build
 Arquivo netlify.toml configurado com:
 
 - build command: npm run build
-- publish dir: dist
-- redirect SPA para /index.html
+- publish dir: dist/client
+- SSR oficial do TanStack Start via adaptador da Netlify
 
 Ver guia completo em docs/DEPLOY_NETLIFY.md.
 

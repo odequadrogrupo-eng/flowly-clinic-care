@@ -20,6 +20,7 @@ ClinicFlow-Release
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+supabase/.temp/
 
 # Environment files
 .env
@@ -37,3 +38,6 @@ ClinicFlow-Release
 *.njsproj
 *.sln
 *.sw?
+
+# Local Netlify folder
+.netlify

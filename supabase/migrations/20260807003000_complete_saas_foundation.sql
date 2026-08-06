@@ -599,7 +599,7 @@ BEGIN
         WHEN 3 THEN room4
         ELSE room5
       END,
-      (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8)))::timestamptz,
+      (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int))::timestamptz,
       30,
       CASE (row_number() OVER ()) % 7
         WHEN 0 THEN 'scheduled'
@@ -635,7 +635,7 @@ BEGIN
         ELSE room5
       END,
       'Consulta',
-      CASE WHEN (row_number() OVER ()) % 4 = 0 THEN 'priority' ELSE 'normal' END,
+      CASE WHEN (row_number() OVER ()) % 4 = 0 THEN 'priority'::public.queue_priority ELSE 'normal'::public.queue_priority END,
       CASE (row_number() OVER ()) % 6
         WHEN 0 THEN 'waiting_reception'
         WHEN 1 THEN 'waiting_service'
@@ -643,12 +643,12 @@ BEGIN
         WHEN 3 THEN 'in_service'
         WHEN 4 THEN 'finished'
         ELSE 'cancelled'
-      END,
-      extract(epoch from (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8)))::timestamptz)::integer,
-      (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8)))::timestamptz,
-      (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8), mins => 12))::timestamptz,
-      (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8), mins => 18))::timestamptz,
-      (d + make_interval(hours => 8 + ((row_number() OVER ()) % 8), mins => 35))::timestamptz,
+      END::public.queue_status,
+      extract(epoch from (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int))::timestamptz)::integer,
+      (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int))::timestamptz,
+      (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int, mins => 12))::timestamptz,
+      (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int, mins => 18))::timestamptz,
+      (d + make_interval(hours => (8 + ((row_number() OVER ()) % 8))::int, mins => 35))::timestamptz,
       'Seed demo'
     FROM public.patients p
     WHERE p.clinic_id = clinic_uuid

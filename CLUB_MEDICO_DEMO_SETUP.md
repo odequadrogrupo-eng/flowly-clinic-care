@@ -75,11 +75,11 @@ npm run quality:check
 ## 6) Netlify manual publish
 
 1. Build command: `npm run build`
-2. Publish directory: `.output/public`
+2. Publish directory: `dist/client`
 3. Env vars in Netlify:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-4. For SSR mode in your current stack, keep existing deployment adapter setup; if static-only, use the generated client bundle path above.
+4. O build oficial do TanStack Start para Netlify gera `dist/client` e a função SSR em `.netlify/v1/functions/server.mjs`; nao use `.output/public` como publish directory.
 
 ## 7) GitHub manual send (no automatic remote actions)
 
