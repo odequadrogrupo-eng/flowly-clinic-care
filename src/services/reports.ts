@@ -10,6 +10,74 @@ export type OperationalReport = {
   byProfessional: Array<{ professional: string; total: number }>;
 };
 
+type PrintableReportInput = {
+  clinicName: string;
+  fromDate: string;
+  toDate: string;
+  generatedAtIso?: string;
+  report: OperationalReport;
+};
+
+export function buildOperationalReportPrintHtml(input: PrintableReportInput) {
+  const generatedAt = new Date(input.generatedAtIso ?? new Date().toISOString()).toLocaleString("pt-BR");
+  const statusRows = input.report.byStatus
+    .map((item) => `<tr><td>${item.status}</td><td style=\"text-align:right\">${item.total}</td></tr>`)
+    .join("");
+  const professionalRows = input.report.byProfessional
+    .map((item) => `<tr><td>${item.professional}</td><td style=\"text-align:right\">${item.total}</td></tr>`)
+    .join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\" />
+  <title>Relatório Operacional</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    p { margin: 0 0 6px; }
+    .meta { color: #555; margin-bottom: 16px; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+    .label { font-size: 12px; color: #666; }
+    .value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
+    th { background: #f4f4f4; text-align: left; }
+    .section { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Relatório Operacional</h1>
+  <p><strong>${input.clinicName}</strong></p>
+  <p class=\"meta\">Período: ${input.fromDate} até ${input.toDate} · Gerado em ${generatedAt}</p>
+
+  <section class=\"cards\">
+    <article class=\"card\"><div class=\"label\">Check-ins</div><div class=\"value\">${input.report.totalCheckins}</div></article>
+    <article class=\"card\"><div class=\"label\">Finalizados</div><div class=\"value\">${input.report.totalFinished}</div></article>
+    <article class=\"card\"><div class=\"label\">Cancelados/No-show</div><div class=\"value\">${input.report.totalCancelled}</div></article>
+    <article class=\"card\"><div class=\"label\">Espera média (min)</div><div class=\"value\">${input.report.avgWaitMinutes}</div></article>
+  </section>
+
+  <section class=\"section\">
+    <h2>Status</h2>
+    <table>
+      <thead><tr><th>Status</th><th>Total</th></tr></thead>
+      <tbody>${statusRows}</tbody>
+    </table>
+  </section>
+
+  <section class=\"section\">
+    <h2>Top Profissionais</h2>
+    <table>
+      <thead><tr><th>Profissional</th><th>Total</th></tr></thead>
+      <tbody>${professionalRows}</tbody>
+    </table>
+  </section>
+</body>
+</html>`;
+}
+
 export async function getOperationalReport(clinicId: string, fromIso: string, toIso: string) {
   const { data, error } = await supabase
     .from("queues")

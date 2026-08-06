@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getPrintSettings } from "@/services/totem";
-import { buildPrintHtml, printWithBrowser, tryPrintWithWebApi } from "@/services/print";
+import { buildPrintHtml, printDirect, printWithBrowser, tryPrintWithWebApi } from "@/services/print";
 
 export const Route = createFileRoute("/_authenticated/impressao")({
   component: PrintPage,
@@ -53,15 +53,21 @@ function PrintContent({ clinicId, clinicName, logoUrl }: { clinicId: string; cli
         return;
       }
 
-      const result = await tryPrintWithWebApi(payload, mode);
-      return result;
+      try {
+        return await printDirect(payload, mode);
+      } catch {
+        const endpoint = settings.local_agent_endpoint?.trim() || "http://127.0.0.1:3311/print";
+        return await tryPrintWithWebApi(payload, mode, endpoint);
+      }
     },
     onSuccess: (result) => {
       if (!result) {
         toast.success("Teste enviado para impressão no navegador");
         return;
       }
-      toast.success("Payload de impressão preparado", { description: `${result.mode} -> ${result.endpoint}` });
+      toast.success(result.message, {
+        description: result.endpoint ? `${result.mode} -> ${result.endpoint}` : result.mode,
+      });
     },
     onError: (error: Error) => {
       toast.error("Falha no teste de impressão", { description: error.message });

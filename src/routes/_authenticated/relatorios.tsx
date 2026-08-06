@@ -9,7 +9,7 @@ import { Page } from "@/components/layout/Page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getOperationalReport } from "@/services/reports";
+import { buildOperationalReportPrintHtml, getOperationalReport } from "@/services/reports";
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
   head: () => ({
@@ -80,15 +80,26 @@ function downloadCsv(fileName: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+function openPdfReadyReport(html: string) {
+  const popup = window.open("", "_blank", "width=1100,height=760");
+  if (!popup) {
+    throw new Error("Nao foi possivel abrir a visualizacao de PDF.");
+  }
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+  popup.focus();
+}
+
 function ReportsPage() {
   return (
     <Page title="Relatórios" description="Indicadores operacionais" allowed={["admin", "receptionist", "attendant"]}>
-      {(profile) => <ReportsContent clinicId={profile.clinic_id} />}
+      {(profile) => <ReportsContent clinicId={profile.clinic_id} clinicName={profile.clinics?.name ?? "Clínica"} />}
     </Page>
   );
 }
 
-function ReportsContent({ clinicId }: { clinicId: string }) {
+function ReportsContent({ clinicId, clinicName }: { clinicId: string; clinicName: string }) {
   const [fromDate, setFromDate] = useState(daysAgo(6));
   const [toDate, setToDate] = useState(isoToday());
 
@@ -126,12 +137,28 @@ function ReportsContent({ clinicId }: { clinicId: string }) {
           <Input id="report-to" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <Button
-            variant="outline"
-            onClick={() => downloadCsv(`relatorio-operacional-${fromDate}_a_${toDate}.csv`, toCsv(report))}
-          >
-            Exportar CSV
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => downloadCsv(`relatorio-operacional-${fromDate}_a_${toDate}.csv`, toCsv(report))}
+            >
+              Exportar CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const html = buildOperationalReportPrintHtml({
+                  clinicName,
+                  fromDate,
+                  toDate,
+                  report,
+                });
+                openPdfReadyReport(html);
+              }}
+            >
+              Abrir versão PDF
+            </Button>
+          </div>
         </div>
       </div>
 
