@@ -20,7 +20,6 @@ import {
   Menu,
   Activity,
   BookOpen,
-  Presentation,
   Building2,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -127,22 +126,16 @@ const navItems: NavItem[] = [
     roles: ["superadmin", "admin", "receptionist", "attendant", "professional", "public_display"],
   },
   {
-    to: "/superadmin-clinicas",
-    label: "Superadmin · Clínicas",
+    to: "/superadmin",
+    label: "Superadmin · Hub",
     icon: Building2,
     roles: ["superadmin"],
   },
   {
-    to: "/apresentacao",
-    label: "Apresentação Comercial",
-    icon: Presentation,
-    roles: ["superadmin", "admin"],
-  },
-  {
-    to: "/manual",
-    label: "Manual Público",
-    icon: BookOpen,
-    roles: ["superadmin", "admin"],
+    to: "/superadmin-clinicas",
+    label: "Superadmin · Clínicas",
+    icon: Building2,
+    roles: ["superadmin"],
   },
 ];
 

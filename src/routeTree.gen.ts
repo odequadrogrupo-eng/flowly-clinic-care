@@ -31,6 +31,7 @@ import { Route as AuthenticatedProfissionaisRouteImport } from './routes/_authen
 import { Route as AuthenticatedRecepcaoRouteImport } from './routes/_authenticated/recepcao'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
+import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedSuperadminClinicasRouteImport } from './routes/_authenticated/superadmin-clinicas'
 import { Route as PainelTokenRouteImport } from './routes/painel/$token'
 import { Route as TotemTokenRouteImport } from './routes/totem/$token'
@@ -147,6 +148,11 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSuperadminRoute = AuthenticatedSuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSuperadminClinicasRoute =
   AuthenticatedSuperadminClinicasRouteImport.update({
     id: '/superadmin-clinicas',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/recepcao': typeof AuthenticatedRecepcaoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/superadmin': typeof AuthenticatedSuperadminRoute
   '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/recepcao': typeof AuthenticatedRecepcaoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/superadmin': typeof AuthenticatedSuperadminRoute
   '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/_authenticated/recepcao': typeof AuthenticatedRecepcaoRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
+  '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
   '/_authenticated/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/recepcao'
     | '/relatorios'
     | '/salas'
+    | '/superadmin'
     | '/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/recepcao'
     | '/relatorios'
     | '/salas'
+    | '/superadmin'
     | '/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recepcao'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
+    | '/_authenticated/superadmin'
     | '/_authenticated/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
@@ -493,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/superadmin': {
+      id: '/_authenticated/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof AuthenticatedSuperadminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/superadmin-clinicas': {
       id: '/_authenticated/superadmin-clinicas'
       path: '/superadmin-clinicas'
@@ -533,6 +552,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecepcaoRoute: typeof AuthenticatedRecepcaoRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
+  AuthenticatedSuperadminRoute: typeof AuthenticatedSuperadminRoute
   AuthenticatedSuperadminClinicasRoute: typeof AuthenticatedSuperadminClinicasRoute
 }
 
@@ -552,6 +572,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecepcaoRoute: AuthenticatedRecepcaoRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
+  AuthenticatedSuperadminRoute: AuthenticatedSuperadminRoute,
   AuthenticatedSuperadminClinicasRoute: AuthenticatedSuperadminClinicasRoute,
 }
 
