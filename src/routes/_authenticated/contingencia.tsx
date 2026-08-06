@@ -79,10 +79,7 @@ function ContingencyContent({ clinicId }: { clinicId: string }) {
 
   const lastSync = localStorage.getItem("clinicflow:contingency:last-sync");
   const pending = useMemo(() => pendingQuery.data ?? [], [pendingQuery.data]);
-  const conflicts = useMemo(
-    () => pending.filter((item) => item.status === "conflict"),
-    [pending],
-  );
+  const conflicts = useMemo(() => pending.filter((item) => item.status === "conflict"), [pending]);
 
   return (
     <div className="space-y-4">

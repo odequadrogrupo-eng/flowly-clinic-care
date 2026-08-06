@@ -73,13 +73,16 @@ function sanitizeMessage(value: string) {
 }
 
 function sanitizeContext(value: Record<string, unknown>) {
-  const json = JSON.stringify(value).replace(
-    /(password|senha|token|secret|service_role_key)\"\s*:\s*\"[^\"]+\"/gi,
-    '$1":"[REDACTED]"',
-  );
+  const json = JSON.stringify(value);
 
   try {
-    return JSON.parse(json) as Record<string, unknown>;
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    for (const key of Object.keys(parsed)) {
+      if (/password|senha|token|secret|service_role_key/i.test(key)) {
+        parsed[key] = "[REDACTED]";
+      }
+    }
+    return parsed;
   } catch {
     return { redacted: true };
   }
