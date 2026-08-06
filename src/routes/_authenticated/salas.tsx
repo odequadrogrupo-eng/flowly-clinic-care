@@ -17,17 +17,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { logAudit, type Room } from "@/lib/queue";
+import { archiveRoom, listRooms, saveRoom, type RoomFormValues } from "@/services/rooms";
 
 export const Route = createFileRoute("/_authenticated/salas")({
   head: () => ({
     meta: [
       { title: "Salas e consultórios — ClinicFlow" },
-      { name: "description", content: "Cadastro de salas, consultórios e setores usados nas chamadas de pacientes." },
+      {
+        name: "description",
+        content: "Cadastro de salas, consultórios e setores usados nas chamadas de pacientes.",
+      },
       { property: "og:title", content: "Salas e consultórios — ClinicFlow" },
       { property: "og:description", content: "Organize salas e setores da clínica no ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -36,13 +45,15 @@ export const Route = createFileRoute("/_authenticated/salas")({
   component: RoomsPage,
 });
 
-type FormState = { id?: string; name: string; number: string; sector: string };
-
-const emptyForm: FormState = { name: "", number: "", sector: "" };
+const emptyForm: RoomFormValues = { name: "", number: "", sector: "" };
 
 function RoomsPage() {
   return (
-    <Page title="Salas e consultórios" description="Usadas nas chamadas do painel" allowed={["admin"]}>
+    <Page
+      title="Salas e consultórios"
+      description="Usadas nas chamadas do painel"
+      allowed={["admin"]}
+    >
       {(profile) => <RoomsContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -50,43 +61,21 @@ function RoomsPage() {
 
 function RoomsContent({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<FormState | null>(null);
+  const [form, setForm] = useState<RoomFormValues | null>(null);
   const [removing, setRemoving] = useState<Room | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["rooms", clinicId],
-    queryFn: async () => {
-      const { data: rows, error: queryError } = await supabase
-        .from("rooms")
-        .select("*")
-        .eq("active", true)
-        .order("name");
-      if (queryError) throw queryError;
-      return (rows ?? []) as Room[];
-    },
+    queryFn: () => listRooms(clinicId),
   });
 
   const save = useMutation({
-    mutationFn: async (values: FormState) => {
-      if (!values.name.trim()) throw new Error("Informe o nome da sala.");
-      const payload = {
-        clinic_id: clinicId,
-        name: values.name.trim(),
-        number: values.number.trim() || null,
-        sector: values.sector.trim() || null,
-      };
+    mutationFn: async (values: RoomFormValues) => {
+      const savedId = await saveRoom(clinicId, values);
       if (values.id) {
-        const { error: updateError } = await supabase.from("rooms").update(payload).eq("id", values.id);
-        if (updateError) throw updateError;
-        await logAudit({ clinicId, action: "update", entity: "rooms", entityId: values.id });
+        await logAudit({ clinicId, action: "update", entity: "rooms", entityId: savedId });
       } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from("rooms")
-          .insert(payload)
-          .select("id")
-          .single();
-        if (insertError) throw insertError;
-        await logAudit({ clinicId, action: "create", entity: "rooms", entityId: inserted.id });
+        await logAudit({ clinicId, action: "create", entity: "rooms", entityId: savedId });
       }
     },
     onSuccess: () => {
@@ -94,13 +83,13 @@ function RoomsContent({ clinicId }: { clinicId: string }) {
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
-    onError: (mutationError: Error) => toast.error("Erro ao salvar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao salvar", { description: mutationError.message }),
   });
 
   const remove = useMutation({
     mutationFn: async (room: Room) => {
-      const { error: updateError } = await supabase.from("rooms").update({ active: false }).eq("id", room.id);
-      if (updateError) throw updateError;
+      await archiveRoom(clinicId, room.id);
       await logAudit({ clinicId, action: "archive", entity: "rooms", entityId: room.id });
     },
     onSuccess: () => {
@@ -124,7 +113,10 @@ function RoomsContent({ clinicId }: { clinicId: string }) {
         <ErrorState error={error} />
       ) : (data ?? []).length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Nenhuma sala" description="Cadastre consultórios e salas de procedimento." />
+          <EmptyState
+            title="Nenhuma sala"
+            description="Cadastre consultórios e salas de procedimento."
+          />
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -142,7 +134,12 @@ function RoomsContent({ clinicId }: { clinicId: string }) {
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    setForm({ id: room.id, name: room.name, number: room.number ?? "", sector: room.sector ?? "" })
+                    setForm({
+                      id: room.id,
+                      name: room.name,
+                      number: room.number ?? "",
+                      sector: room.sector ?? "",
+                    })
                   }
                 >
                   <Pencil className="size-4" /> Editar
@@ -165,7 +162,11 @@ function RoomsContent({ clinicId }: { clinicId: string }) {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="r-name">Nome</Label>
-                <Input id="r-name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+                <Input
+                  id="r-name"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">

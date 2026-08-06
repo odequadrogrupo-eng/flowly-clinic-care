@@ -27,14 +27,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 import { logAudit, type Patient } from "@/lib/queue";
+import {
+  archivePatient,
+  listPatients,
+  savePatient,
+  type PatientFormValues,
+} from "@/services/patients";
 
 export const Route = createFileRoute("/_authenticated/pacientes")({
   head: () => ({
     meta: [
       { title: "Pacientes — ClinicFlow" },
-      { name: "description", content: "Cadastro de pacientes da clínica: nome, contato e observações." },
+      {
+        name: "description",
+        content: "Cadastro de pacientes da clínica: nome, contato e observações.",
+      },
       { property: "og:title", content: "Pacientes — ClinicFlow" },
       { property: "og:description", content: "Gestão do cadastro de pacientes no ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -43,21 +51,23 @@ export const Route = createFileRoute("/_authenticated/pacientes")({
   component: PatientsPage,
 });
 
-type FormState = {
-  id?: string;
-  full_name: string;
-  cpf: string;
-  birth_date: string;
-  phone: string;
-  email: string;
-  notes: string;
+const emptyForm: PatientFormValues = {
+  full_name: "",
+  cpf: "",
+  birth_date: "",
+  phone: "",
+  email: "",
+  address: "",
+  notes: "",
 };
-
-const emptyForm: FormState = { full_name: "", cpf: "", birth_date: "", phone: "", email: "", notes: "" };
 
 function PatientsPage() {
   return (
-    <Page title="Pacientes" description="Cadastro e histórico de contato" allowed={["admin", "receptionist"]}>
+    <Page
+      title="Pacientes"
+      description="Cadastro e histórico de contato"
+      allowed={["admin", "receptionist", "attendant"]}
+    >
       {(profile) => <PatientsContent clinicId={profile.clinic_id} />}
     </Page>
   );
@@ -66,20 +76,12 @@ function PatientsPage() {
 function PatientsContent({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
   const [term, setTerm] = useState("");
-  const [form, setForm] = useState<FormState | null>(null);
+  const [form, setForm] = useState<PatientFormValues | null>(null);
   const [removing, setRemoving] = useState<Patient | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["patients", clinicId, term],
-    queryFn: async () => {
-      const base = supabase.from("patients").select("*").eq("active", true).order("full_name").limit(100);
-      const trimmed = term.trim();
-      const { data: rows, error: queryError } = trimmed
-        ? await base.or(`full_name.ilike.%${trimmed}%,cpf.ilike.%${trimmed}%,phone.ilike.%${trimmed}%`)
-        : await base;
-      if (queryError) throw queryError;
-      return (rows ?? []) as Patient[];
-    },
+    queryFn: () => listPatients(clinicId, term),
   });
 
   const invalidate = () => {
@@ -88,29 +90,12 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
   };
 
   const save = useMutation({
-    mutationFn: async (values: FormState) => {
-      if (values.full_name.trim().length < 3) throw new Error("Informe o nome completo (mínimo 3 caracteres).");
-      const payload = {
-        clinic_id: clinicId,
-        full_name: values.full_name.trim(),
-        cpf: values.cpf.trim() || null,
-        birth_date: values.birth_date || null,
-        phone: values.phone.trim() || null,
-        email: values.email.trim() || null,
-        notes: values.notes.trim() || null,
-      };
+    mutationFn: async (values: PatientFormValues) => {
+      const savedId = await savePatient(clinicId, values);
       if (values.id) {
-        const { error: updateError } = await supabase.from("patients").update(payload).eq("id", values.id);
-        if (updateError) throw updateError;
-        await logAudit({ clinicId, action: "update", entity: "patients", entityId: values.id });
+        await logAudit({ clinicId, action: "update", entity: "patients", entityId: savedId });
       } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from("patients")
-          .insert(payload)
-          .select("id")
-          .single();
-        if (insertError) throw insertError;
-        await logAudit({ clinicId, action: "create", entity: "patients", entityId: inserted.id });
+        await logAudit({ clinicId, action: "create", entity: "patients", entityId: savedId });
       }
     },
     onSuccess: () => {
@@ -118,13 +103,13 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
       setForm(null);
       invalidate();
     },
-    onError: (mutationError: Error) => toast.error("Erro ao salvar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao salvar", { description: mutationError.message }),
   });
 
   const remove = useMutation({
     mutationFn: async (patient: Patient) => {
-      const { error: updateError } = await supabase.from("patients").update({ active: false }).eq("id", patient.id);
-      if (updateError) throw updateError;
+      await archivePatient(clinicId, patient.id);
       await logAudit({ clinicId, action: "archive", entity: "patients", entityId: patient.id });
     },
     onSuccess: () => {
@@ -157,7 +142,10 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
         <ErrorState error={error} />
       ) : (data ?? []).length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Nenhum paciente" description="Cadastre o primeiro paciente da clínica." />
+          <EmptyState
+            title="Nenhum paciente"
+            description="Cadastre o primeiro paciente da clínica."
+          />
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -167,7 +155,12 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
               <p className="mt-1 text-sm text-muted-foreground">
                 {patient.phone ?? "Sem telefone"} · {patient.cpf ?? "Sem CPF"}
               </p>
-              {patient.email ? <p className="text-sm text-muted-foreground">{patient.email}</p> : null}
+              {patient.email ? (
+                <p className="text-sm text-muted-foreground">{patient.email}</p>
+              ) : null}
+              {patient.address ? (
+                <p className="text-sm text-muted-foreground">{patient.address}</p>
+              ) : null}
               {patient.notes ? <p className="mt-2 text-sm">{patient.notes}</p> : null}
               <div className="mt-3 flex gap-2">
                 <Button
@@ -181,6 +174,7 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
                       birth_date: patient.birth_date ?? "",
                       phone: patient.phone ?? "",
                       email: patient.email ?? "",
+                      address: patient.address ?? "",
                       notes: patient.notes ?? "",
                     })
                   }
@@ -214,7 +208,11 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="p-cpf">CPF</Label>
-                  <Input id="p-cpf" value={form.cpf} onChange={(event) => setForm({ ...form, cpf: event.target.value })} />
+                  <Input
+                    id="p-cpf"
+                    value={form.cpf}
+                    onChange={(event) => setForm({ ...form, cpf: event.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="p-birth">Data de nascimento</Label>
@@ -240,6 +238,14 @@ function PatientsContent({ clinicId }: { clinicId: string }) {
                     type="email"
                     value={form.email}
                     onChange={(event) => setForm({ ...form, email: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="p-address">Endereco</Label>
+                  <Input
+                    id="p-address"
+                    value={form.address}
+                    onChange={(event) => setForm({ ...form, address: event.target.value })}
                   />
                 </div>
               </div>

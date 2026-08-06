@@ -17,21 +17,42 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { logAudit, type Professional, type Room } from "@/lib/queue";
-
-type ProfessionalStatus = Database["public"]["Enums"]["professional_status"];
+import {
+  archiveProfessional,
+  listActiveProfiles,
+  listActiveRooms,
+  listProfessionals,
+  NONE,
+  saveProfessional,
+  type ProfessionalFormValues,
+  type ProfessionalStatus,
+} from "@/services/professionals";
 
 export const Route = createFileRoute("/_authenticated/profissionais")({
   head: () => ({
     meta: [
       { title: "Profissionais — ClinicFlow" },
-      { name: "description", content: "Cadastro de profissionais, especialidades, salas e status de disponibilidade." },
+      {
+        name: "description",
+        content: "Cadastro de profissionais, especialidades, salas e status de disponibilidade.",
+      },
       { property: "og:title", content: "Profissionais — ClinicFlow" },
       { property: "og:description", content: "Gestão da equipe de atendimento no ClinicFlow." },
       { name: "robots", content: "noindex" },
@@ -52,21 +73,7 @@ const statusClass: Record<ProfessionalStatus, string> = {
   away: "bg-muted text-muted-foreground",
 };
 
-const NONE = "__none__";
-
-type FormState = {
-  id?: string;
-  full_name: string;
-  specialty: string;
-  professional_registration: string;
-  phone: string;
-  email: string;
-  room_id: string;
-  profile_id: string;
-  status: ProfessionalStatus;
-};
-
-const emptyForm: FormState = {
+const emptyForm: ProfessionalFormValues = {
   full_name: "",
   specialty: "",
   professional_registration: "",
@@ -87,74 +94,31 @@ function ProfessionalsPage() {
 
 function ProfessionalsContent({ clinicId }: { clinicId: string }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<FormState | null>(null);
+  const [form, setForm] = useState<ProfessionalFormValues | null>(null);
   const [removing, setRemoving] = useState<Professional | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["professionals", clinicId],
-    queryFn: async () => {
-      const { data: rows, error: queryError } = await supabase
-        .from("professionals")
-        .select("*")
-        .eq("active", true)
-        .order("full_name");
-      if (queryError) throw queryError;
-      return (rows ?? []) as Professional[];
-    },
+    queryFn: () => listProfessionals(clinicId),
   });
 
   const roomsQuery = useQuery({
     queryKey: ["rooms", clinicId],
-    queryFn: async () => {
-      const { data: rows, error: queryError } = await supabase
-        .from("rooms")
-        .select("*")
-        .eq("active", true)
-        .order("name");
-      if (queryError) throw queryError;
-      return (rows ?? []) as Room[];
-    },
+    queryFn: () => listActiveRooms(clinicId),
   });
 
   const profilesQuery = useQuery({
     queryKey: ["profiles", clinicId],
-    queryFn: async () => {
-      const { data: rows, error: queryError } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, role")
-        .eq("active", true)
-        .order("full_name");
-      if (queryError) throw queryError;
-      return rows ?? [];
-    },
+    queryFn: () => listActiveProfiles(clinicId),
   });
 
   const save = useMutation({
-    mutationFn: async (values: FormState) => {
-      if (values.full_name.trim().length < 3) throw new Error("Informe o nome do profissional.");
-      const payload = {
-        clinic_id: clinicId,
-        full_name: values.full_name.trim(),
-        specialty: values.specialty.trim() || null,
-        professional_registration: values.professional_registration.trim() || null,
-        phone: values.phone.trim() || null,
-        email: values.email.trim() || null,
-        room_id: values.room_id === NONE ? null : values.room_id,
-        profile_id: values.profile_id === NONE ? null : values.profile_id,
-        status: values.status,
-      };
+    mutationFn: async (values: ProfessionalFormValues) => {
+      const savedId = await saveProfessional(clinicId, values);
       if (values.id) {
-        const { error: updateError } = await supabase.from("professionals").update(payload).eq("id", values.id);
-        if (updateError) throw updateError;
-        await logAudit({ clinicId, action: "update", entity: "professionals", entityId: values.id });
+        await logAudit({ clinicId, action: "update", entity: "professionals", entityId: savedId });
       } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from("professionals")
-          .insert(payload)
-          .select("id")
-          .single();
-        if (insertError) throw insertError;
-        await logAudit({ clinicId, action: "create", entity: "professionals", entityId: inserted.id });
+        await logAudit({ clinicId, action: "create", entity: "professionals", entityId: savedId });
       }
     },
     onSuccess: () => {
@@ -162,17 +126,19 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["professionals"] });
     },
-    onError: (mutationError: Error) => toast.error("Erro ao salvar", { description: mutationError.message }),
+    onError: (mutationError: Error) =>
+      toast.error("Erro ao salvar", { description: mutationError.message }),
   });
 
   const remove = useMutation({
     mutationFn: async (professional: Professional) => {
-      const { error: updateError } = await supabase
-        .from("professionals")
-        .update({ active: false })
-        .eq("id", professional.id);
-      if (updateError) throw updateError;
-      await logAudit({ clinicId, action: "archive", entity: "professionals", entityId: professional.id });
+      await archiveProfessional(clinicId, professional.id);
+      await logAudit({
+        clinicId,
+        action: "archive",
+        entity: "professionals",
+        entityId: professional.id,
+      });
     },
     onSuccess: () => {
       toast.success("Profissional arquivado");
@@ -197,7 +163,10 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
         <ErrorState error={error} />
       ) : (data ?? []).length === 0 ? (
         <div className="card-soft">
-          <EmptyState title="Nenhum profissional" description="Cadastre médicos e demais profissionais da clínica." />
+          <EmptyState
+            title="Nenhum profissional"
+            description="Cadastre médicos e demais profissionais da clínica."
+          />
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -208,9 +177,13 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold">{professional.full_name}</p>
-                    <p className="text-sm text-muted-foreground">{professional.specialty ?? "Sem especialidade"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {professional.specialty ?? "Sem especialidade"}
+                    </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[professional.status]}`}>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[professional.status]}`}
+                  >
                     {statusLabel[professional.status]}
                   </span>
                 </div>
@@ -280,7 +253,9 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
                   <Input
                     id="pr-reg"
                     value={form.professional_registration}
-                    onChange={(event) => setForm({ ...form, professional_registration: event.target.value })}
+                    onChange={(event) =>
+                      setForm({ ...form, professional_registration: event.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -303,7 +278,10 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
               </div>
               <div className="space-y-2">
                 <Label>Sala padrão</Label>
-                <Select value={form.room_id} onValueChange={(value) => setForm({ ...form, room_id: value })}>
+                <Select
+                  value={form.room_id}
+                  onValueChange={(value) => setForm({ ...form, room_id: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -320,7 +298,10 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
               </div>
               <div className="space-y-2">
                 <Label>Usuário do sistema</Label>
-                <Select value={form.profile_id} onValueChange={(value) => setForm({ ...form, profile_id: value })}>
+                <Select
+                  value={form.profile_id}
+                  onValueChange={(value) => setForm({ ...form, profile_id: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -341,7 +322,9 @@ function ProfessionalsContent({ clinicId }: { clinicId: string }) {
                 <Label>Status</Label>
                 <Select
                   value={form.status}
-                  onValueChange={(value) => setForm({ ...form, status: value as ProfessionalStatus })}
+                  onValueChange={(value) =>
+                    setForm({ ...form, status: value as ProfessionalStatus })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />

@@ -20,7 +20,15 @@ export function ErrorState({ error, label }: { error?: unknown; label?: string |
   );
 }
 
-export function EmptyState({ title, description, action }: { title: string; description?: string | undefined; action?: ReactNode | undefined }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string | undefined;
+  action?: ReactNode | undefined;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 p-10 text-center">
       <Inbox className="size-6 text-muted-foreground" />
@@ -49,7 +57,11 @@ export function StatCard({
         <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
         {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
-      {icon ? <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">{icon}</span> : null}
+      {icon ? (
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          {icon}
+        </span>
+      ) : null}
     </div>
   );
 }

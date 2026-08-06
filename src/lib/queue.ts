@@ -21,6 +21,10 @@ export const QUEUE_SELECT =
 export const statusLabels: Record<QueueStatus, string> = {
   waiting: "Aguardando",
   called: "Chamado",
+  waiting_reception: "Aguardando recepção",
+  called_reception: "Chamado na recepção",
+  waiting_service: "Aguardando atendimento",
+  called_service: "Chamado para atendimento",
   in_service: "Em atendimento",
   finished: "Finalizado",
   cancelled: "Cancelado",
@@ -30,11 +34,36 @@ export const statusLabels: Record<QueueStatus, string> = {
 export const statusTone: Record<QueueStatus, string> = {
   waiting: "bg-secondary text-secondary-foreground",
   called: "bg-warning/20 text-warning-foreground",
+  waiting_reception: "bg-secondary text-secondary-foreground",
+  called_reception: "bg-warning/20 text-warning-foreground",
+  waiting_service: "bg-secondary text-secondary-foreground",
+  called_service: "bg-warning/20 text-warning-foreground",
   in_service: "bg-primary/12 text-primary",
   finished: "bg-success/15 text-success",
   cancelled: "bg-destructive/12 text-destructive",
   no_show: "bg-muted text-muted-foreground",
 };
+
+function queueStatusToTicketStatus(
+  status: QueueStatus,
+):
+  | "waiting_reception"
+  | "called_reception"
+  | "waiting_service"
+  | "called_service"
+  | "in_service"
+  | "finished"
+  | "cancelled"
+  | "no_show" {
+  if (status === "waiting_reception") return "waiting_reception";
+  if (status === "called_reception") return "called_reception";
+  if (status === "waiting_service" || status === "waiting") return "waiting_service";
+  if (status === "called_service" || status === "called") return "called_service";
+  if (status === "in_service") return "in_service";
+  if (status === "finished") return "finished";
+  if (status === "cancelled") return "cancelled";
+  return "no_show";
+}
 
 export async function logAudit(input: {
   clinicId: string;
@@ -64,14 +93,26 @@ export function displayName(fullName: string) {
   return `${first} ${last.charAt(0).toUpperCase()}.`;
 }
 
-
 export async function callQueueItem(item: QueueItem, clinicId: string) {
   const now = new Date().toISOString();
+  const nextStatus: QueueStatus =
+    item.status === "waiting_reception"
+      ? "called_reception"
+      : item.status === "waiting_service"
+        ? "called_service"
+        : "called";
+
   const { error } = await supabase
     .from("queues")
-    .update({ status: "called", called_at: now })
+    .update({ status: nextStatus, called_at: now })
     .eq("id", item.id);
   if (error) throw error;
+
+  await supabase
+    .from("tickets" as never)
+    .update({ status: queueStatusToTicketStatus(nextStatus), called_at: now } as never)
+    .eq("clinic_id", clinicId)
+    .eq("queue_id", item.id);
 
   const { error: callError } = await supabase.from("calls").insert({
     clinic_id: clinicId,
@@ -81,9 +122,7 @@ export async function callQueueItem(item: QueueItem, clinicId: string) {
     room_id: item.room_id,
     display_name: displayName(item.patients?.full_name ?? "Paciente"),
     professional_name: item.professionals?.full_name ?? null,
-    room_name: item.rooms
-      ? [item.rooms.name, item.rooms.number].filter(Boolean).join(" ")
-      : null,
+    room_name: item.rooms ? [item.rooms.name, item.rooms.number].filter(Boolean).join(" ") : null,
     called_at: now,
   });
   if (callError) throw callError;
@@ -98,11 +137,30 @@ export async function updateQueueStatus(
 ) {
   const now = new Date().toISOString();
   const patch: Partial<QueueRow> = { status, ...extra };
+  if (status === "called" || status === "called_reception" || status === "called_service")
+    patch.called_at = now;
   if (status === "in_service") patch.started_at = now;
   if (status === "finished") patch.finished_at = now;
   if (status === "cancelled") patch.cancelled_at = now;
   const { error } = await supabase.from("queues").update(patch).eq("id", item.id);
   if (error) throw error;
+
+  const ticketPatch: Record<string, unknown> = {
+    status: queueStatusToTicketStatus(status),
+  };
+  if (status === "called" || status === "called_reception" || status === "called_service") {
+    ticketPatch["called_at"] = patch.called_at ?? now;
+  }
+  if (status === "cancelled") {
+    ticketPatch["cancelled_at"] = now;
+  }
+
+  await supabase
+    .from("tickets" as never)
+    .update(ticketPatch as never)
+    .eq("clinic_id", clinicId)
+    .eq("queue_id", item.id);
+
   await logAudit({ clinicId, action: `queue_${status}`, entity: "queues", entityId: item.id });
 }
 
