@@ -522,7 +522,13 @@ export type Database = {
       my_professional_ids: { Args: never; Returns: string[] };
     };
     Enums: {
-      app_role: "admin" | "receptionist" | "attendant" | "professional" | "public_display";
+      app_role:
+        | "superadmin"
+        | "admin"
+        | "receptionist"
+        | "attendant"
+        | "professional"
+        | "public_display";
       professional_status: "available" | "busy" | "away";
       queue_priority: "normal" | "priority";
       queue_status:
@@ -657,7 +663,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "receptionist", "attendant", "professional", "public_display"],
+      app_role: [
+        "superadmin",
+        "admin",
+        "receptionist",
+        "attendant",
+        "professional",
+        "public_display",
+      ],
       professional_status: ["available", "busy", "away"],
       queue_priority: ["normal", "priority"],
       queue_status: [

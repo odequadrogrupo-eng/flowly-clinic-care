@@ -43,7 +43,6 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [clinicName, setClinicName] = useState("");
 
   const inviteParams = useMemo(() => {
     if (typeof window === "undefined") {
@@ -69,9 +68,7 @@ function AuthPage() {
 
   useEffect(() => {
     if (!isInviteFlow) return;
-    if (inviteParams.invitedMode === "signup") setMode("signup");
     if (inviteParams.invitedEmail) setEmail(inviteParams.invitedEmail);
-    if (inviteParams.invitedClinicName) setClinicName(inviteParams.invitedClinicName);
   }, [inviteParams, isInviteFlow]);
 
   async function handleLogin(event: React.FormEvent) {
@@ -104,7 +101,8 @@ function AuthPage() {
         inviteParams.inviteRole === "receptionist" ||
         inviteParams.inviteRole === "attendant" ||
         inviteParams.inviteRole === "professional" ||
-        inviteParams.inviteRole === "public_display"
+        inviteParams.inviteRole === "public_display" ||
+        inviteParams.inviteRole === "superadmin"
           ? inviteParams.inviteRole
           : null;
 
@@ -116,11 +114,6 @@ function AuthPage() {
 
       if (inviteParams.inviteToken) {
         signUpPayload.inviteToken = inviteParams.inviteToken;
-      } else {
-        signUpPayload.clinicName = clinicName;
-        if (tenantBranding?.tenantSlug) {
-          signUpPayload.clinicSlug = tenantBranding.tenantSlug;
-        }
       }
 
       if (inviteRole) {
@@ -141,8 +134,8 @@ function AuthPage() {
       navigate({ to: "/dashboard", replace: true });
       return;
     }
-    toast.success("Conta criada", {
-      description: "Confirme o e-mail enviado para ativar o acesso.",
+    toast.success("Conta ativada", {
+      description: "Use seu e-mail e senha para entrar no ClinicFlow.",
     });
     setMode("login");
   }
@@ -191,9 +184,8 @@ function AuthPage() {
 
         <div className="card-soft mt-6 p-6">
           <Tabs value={mode} onValueChange={setMode}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Criar conta</TabsTrigger>
               <TabsTrigger value="reset">Senha</TabsTrigger>
             </TabsList>
 
@@ -234,56 +226,6 @@ function AuthPage() {
               </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="mt-5">
-              <form className="space-y-4" onSubmit={handleSignUp}>
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Seu nome completo</Label>
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clinicName">Nome da clínica</Label>
-                  <Input
-                    id="clinicName"
-                    value={clinicName}
-                    onChange={(e) => setClinicName(e.target.value)}
-                    disabled={isInviteFlow}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signupEmail">E-mail</Label>
-                  <Input
-                    id="signupEmail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signupPassword">Senha</Label>
-                  <Input
-                    id="signupPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                {error ? <p className="text-sm text-destructive">{error}</p> : null}
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Criando..." : isInviteFlow ? "Criar conta" : "Criar clínica e conta"}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {isInviteFlow
-                    ? "Seu convite define clínica e permissões automaticamente."
-                    : "Você será o administrador da clínica e poderá convidar a equipe depois."}
-                </p>
-              </form>
-            </TabsContent>
-
             <TabsContent value="reset" className="mt-5">
               <form className="space-y-4" onSubmit={handleReset}>
                 <div className="space-y-2">
@@ -302,6 +244,45 @@ function AuthPage() {
               </form>
             </TabsContent>
           </Tabs>
+
+          {isInviteFlow ? (
+            <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <h3 className="text-sm font-semibold">Ativar conta por convite</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Convite para {inviteParams.invitedClinicName || "sua clínica"}. Defina seu nome e
+                senha para concluir o acesso.
+              </p>
+
+              <form className="mt-3 space-y-3" onSubmit={handleSignUp}>
+                <div className="space-y-1.5">
+                  <Label htmlFor="invite-name">Nome completo</Label>
+                  <Input
+                    id="invite-name"
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="invite-email">E-mail</Label>
+                  <Input id="invite-email" value={email} disabled />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="invite-password">Senha</Label>
+                  <Input
+                    id="invite-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </div>
+                {error ? <p className="text-sm text-destructive">{error}</p> : null}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Ativando..." : "Ativar conta"}
+                </Button>
+              </form>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

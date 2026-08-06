@@ -37,6 +37,18 @@ type DeleteBody = {
 
 type Body = CreateBody | UpdateBody | DeleteBody;
 
+type SuperadminCreateClinicBody = {
+  action: "superadmin_create_clinic_with_admin";
+  clinic: Record<string, unknown>;
+  name: string;
+  email: string;
+  phone?: string | null;
+  tempPassword: string;
+  roomsCount?: number;
+  receptionsCount?: number;
+  ticketPrefix?: string;
+};
+
 function ensureRole(role: string): AppRole {
   if (!roleSet.has(role as AppRole)) {
     throw new Error("Papel de acesso inválido.");
@@ -139,7 +151,70 @@ Deno.serve(async (req) => {
 
   try {
     const admin = await assertAdmin(authHeader);
-    const body = (await req.json()) as Body;
+    const body = (await req.json()) as Body | SuperadminCreateClinicBody;
+
+    if (body.action === "superadmin_create_clinic_with_admin") {
+      if (admin.userId === null) throw new Error("Usuário inválido.");
+      const profile = await admin.serviceClient
+        .from("profiles")
+        .select("role")
+        .eq("id", admin.userId)
+        .single();
+      if (profile.error) throw profile.error;
+      if ((profile.data as { role: string }).role !== "superadmin") {
+        throw new Error("Apenas superadmin pode criar clínicas.");
+      }
+
+      const clinicInsert = await admin.serviceClient
+        .from("clinics")
+        .insert(body.clinic)
+        .select("id")
+        .single();
+      if (clinicInsert.error) throw clinicInsert.error;
+      const clinicId = (clinicInsert.data as { id: string }).id;
+
+      const createdUser = await admin.serviceClient.auth.admin.createUser({
+        email: normalizeEmail(body.email),
+        password: body.tempPassword,
+        email_confirm: true,
+        user_metadata: { full_name: body.name },
+      });
+      if (createdUser.error) throw createdUser.error;
+
+      const userId = createdUser.data.user.id;
+      await ensureClinicProfile(admin.serviceClient, clinicId, {
+        id: userId,
+        email: body.email,
+        fullName: body.name,
+        role: "admin",
+        active: true,
+      });
+
+      const roomsCount = Math.max(0, Number(body.roomsCount ?? 0));
+      for (let i = 1; i <= roomsCount; i += 1) {
+        await admin.serviceClient.from("rooms").insert({
+          clinic_id: clinicId,
+          name: `Sala ${i}`,
+          number: `${i}`,
+          active: true,
+        });
+      }
+
+      const receptionsCount = Math.max(0, Number(body.receptionsCount ?? 0));
+      for (let i = 1; i <= receptionsCount; i += 1) {
+        await admin.serviceClient.from("receptions" as never).insert({
+          clinic_id: clinicId,
+          name: `Guichê ${i}`,
+          location: "Recepção",
+          active: true,
+        } as never);
+      }
+
+      return new Response(
+        JSON.stringify({ ok: true, clinicId, adminUserId: userId }),
+        { headers: { ...corsHeaders, "content-type": "application/json" } },
+      );
+    }
 
     if (body.action === "create") {
       const email = normalizeEmail(body.email ?? "");

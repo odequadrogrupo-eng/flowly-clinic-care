@@ -80,8 +80,8 @@ export async function assertAdmin(authHeader: string | null) {
     full_name: string | null;
   };
 
-  if (!typed.active || typed.role !== "admin") {
-    throw new Error("Access denied. Admin role required.");
+  if (!typed.active || (typed.role !== "admin" && typed.role !== "superadmin")) {
+    throw new Error("Access denied. Admin or superadmin role required.");
   }
 
   return {

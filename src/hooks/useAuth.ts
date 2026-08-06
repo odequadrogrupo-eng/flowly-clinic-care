@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { getSelectedClinicIdForSuperadmin } from "@/services/superadmin-context";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -26,7 +27,28 @@ export function useProfile() {
         .eq("id", user.id)
         .maybeSingle();
       if (error) throw error;
-      return (data as ProfileWithClinic | null) ?? null;
+
+      const profile = (data as ProfileWithClinic | null) ?? null;
+      if (!profile) return null;
+
+      if (profile.role !== "superadmin") return profile;
+
+      const selectedClinicId = getSelectedClinicIdForSuperadmin();
+      if (!selectedClinicId || selectedClinicId === profile.clinic_id) return profile;
+
+      const clinicRes = await supabase
+        .from("clinics")
+        .select("*")
+        .eq("id", selectedClinicId)
+        .maybeSingle();
+
+      if (clinicRes.error || !clinicRes.data) return profile;
+
+      return {
+        ...profile,
+        clinic_id: selectedClinicId,
+        clinics: clinicRes.data as Clinic,
+      } satisfies ProfileWithClinic;
     },
   });
 }
@@ -47,6 +69,7 @@ export function useAuthSync() {
 }
 
 export const roleLabels: Record<AppRole, string> = {
+  superadmin: "Superadministrador",
   admin: "Administrador",
   receptionist: "Recepcionista",
   attendant: "Atendente",

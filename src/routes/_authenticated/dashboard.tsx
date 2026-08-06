@@ -82,7 +82,7 @@ function DashboardPage() {
     <Page
       title="Dashboard"
       description="Visão geral do atendimento de hoje"
-      allowed={["admin", "receptionist", "professional"]}
+      allowed={["superadmin", "admin", "receptionist", "professional"]}
     >
       {(profile) => <DashboardContent profile={profile} />}
     </Page>

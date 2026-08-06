@@ -103,7 +103,7 @@ function ReportsPage() {
     <Page
       title="Relatórios"
       description="Indicadores operacionais"
-      allowed={["admin", "receptionist"]}
+      allowed={["superadmin", "admin", "receptionist"]}
     >
       {(profile) => (
         <ReportsContent

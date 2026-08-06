@@ -46,7 +46,7 @@ function ReceptionPage() {
     <Page
       title="Recepção"
       description="Triagem e encaminhamento de senhas"
-      allowed={["admin", "receptionist"]}
+      allowed={["superadmin", "admin", "receptionist"]}
     >
       {(profile) => <ReceptionContent clinicId={profile.clinic_id} />}
     </Page>

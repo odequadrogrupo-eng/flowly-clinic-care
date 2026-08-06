@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { ErrorState, LoadingState } from "@/components/common/States";
 import { AppShell, RoleGate } from "@/components/layout/AppShell";
+import { PageHelpActions } from "@/components/layout/PageHelpActions";
 import { useProfile, type AppRole, type ProfileWithClinic } from "@/hooks/useAuth";
 
 export function Page({
@@ -30,7 +31,16 @@ export function Page({
     <AppShell
       title={title}
       description={description}
-      actions={actions}
+      actions={
+        actions ? (
+          <>
+            <PageHelpActions role={profile.role} />
+            {actions}
+          </>
+        ) : (
+          <PageHelpActions role={profile.role} />
+        )
+      }
       role={profile.role}
       clinicName={profile.clinics?.name ?? "Clínica"}
       clinicLogoUrl={profile.clinics?.logo_url ?? null}

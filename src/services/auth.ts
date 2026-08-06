@@ -19,17 +19,8 @@ const signUpSchema = z
     clinicName: z.string().trim().optional(),
     inviteToken: z.string().trim().optional(),
     inviteRole: z
-      .enum(["admin", "receptionist", "attendant", "professional", "public_display"])
+      .enum(["admin", "receptionist", "attendant", "professional", "public_display", "superadmin"])
       .optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.inviteToken && (!data.clinicName || data.clinicName.trim().length === 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Informe o nome da clinica.",
-        path: ["clinicName"],
-      });
-    }
   });
 
 const requestResetSchema = z.object({
@@ -78,7 +69,13 @@ export async function signUpWithClinic(input: {
   clinicName?: string;
   clinicSlug?: string;
   inviteToken?: string;
-  inviteRole?: "admin" | "receptionist" | "attendant" | "professional" | "public_display";
+  inviteRole?:
+    | "admin"
+    | "receptionist"
+    | "attendant"
+    | "professional"
+    | "public_display"
+    | "superadmin";
 }) {
   const data = parseOrThrow(signUpSchema.safeParse(input));
   const metadata: Record<string, string> = {

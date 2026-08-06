@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ApresentacaoRouteImport } from './routes/apresentacao'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedAtendimentoRouteImport } from './routes/_authenticated/atendimento'
 import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 import { Route as AuthenticatedChamadaRouteImport } from './routes/_authenticated/chamada'
@@ -28,6 +30,7 @@ import { Route as AuthenticatedProfissionaisRouteImport } from './routes/_authen
 import { Route as AuthenticatedRecepcaoRouteImport } from './routes/_authenticated/recepcao'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
+import { Route as AuthenticatedSuperadminClinicasRouteImport } from './routes/_authenticated/superadmin-clinicas'
 import { Route as PainelTokenRouteImport } from './routes/painel/$token'
 import { Route as TotemTokenRouteImport } from './routes/totem/$token'
 
@@ -38,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApresentacaoRoute = ApresentacaoRouteImport.update({
+  id: '/apresentacao',
+  path: '/apresentacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -58,6 +66,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAtendimentoRoute =
@@ -128,6 +141,12 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSuperadminClinicasRoute =
+  AuthenticatedSuperadminClinicasRouteImport.update({
+    id: '/superadmin-clinicas',
+    path: '/superadmin-clinicas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const PainelTokenRoute = PainelTokenRouteImport.update({
   id: '/$token',
   path: '/$token',
@@ -141,10 +160,12 @@ const TotemTokenRoute = TotemTokenRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/atendimento': typeof AuthenticatedAtendimentoRoute
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/chamada': typeof AuthenticatedChamadaRoute
@@ -158,15 +179,18 @@ export interface FileRoutesByFullPath {
   '/recepcao': typeof AuthenticatedRecepcaoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/atendimento': typeof AuthenticatedAtendimentoRoute
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/chamada': typeof AuthenticatedChamadaRoute
@@ -180,6 +204,7 @@ export interface FileRoutesByTo {
   '/recepcao': typeof AuthenticatedRecepcaoRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
 }
@@ -187,10 +212,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/apresentacao': typeof ApresentacaoRoute
   '/auth': typeof AuthRoute
   '/painel': typeof PainelRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/atendimento': typeof AuthenticatedAtendimentoRoute
   '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/chamada': typeof AuthenticatedChamadaRoute
@@ -204,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/recepcao': typeof AuthenticatedRecepcaoRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
+  '/_authenticated/superadmin-clinicas': typeof AuthenticatedSuperadminClinicasRoute
   '/painel/$token': typeof PainelTokenRoute
   '/totem/$token': typeof TotemTokenRoute
 }
@@ -211,10 +239,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/apresentacao'
     | '/auth'
     | '/painel'
     | '/reset-password'
     | '/agenda'
+    | '/ajuda'
     | '/atendimento'
     | '/auditoria'
     | '/chamada'
@@ -228,15 +258,18 @@ export interface FileRouteTypes {
     | '/recepcao'
     | '/relatorios'
     | '/salas'
+    | '/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/apresentacao'
     | '/auth'
     | '/painel'
     | '/reset-password'
     | '/agenda'
+    | '/ajuda'
     | '/atendimento'
     | '/auditoria'
     | '/chamada'
@@ -250,16 +283,19 @@ export interface FileRouteTypes {
     | '/recepcao'
     | '/relatorios'
     | '/salas'
+    | '/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/apresentacao'
     | '/auth'
     | '/painel'
     | '/reset-password'
     | '/_authenticated/agenda'
+    | '/_authenticated/ajuda'
     | '/_authenticated/atendimento'
     | '/_authenticated/auditoria'
     | '/_authenticated/chamada'
@@ -273,6 +309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recepcao'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
+    | '/_authenticated/superadmin-clinicas'
     | '/painel/$token'
     | '/totem/$token'
   fileRoutesById: FileRoutesById
@@ -280,6 +317,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ApresentacaoRoute: typeof ApresentacaoRoute
   AuthRoute: typeof AuthRoute
   PainelRoute: typeof PainelRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -300,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apresentacao': {
+      id: '/apresentacao'
+      path: '/apresentacao'
+      fullPath: '/apresentacao'
+      preLoaderRoute: typeof ApresentacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -328,6 +373,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/atendimento': {
@@ -421,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/superadmin-clinicas': {
+      id: '/_authenticated/superadmin-clinicas'
+      path: '/superadmin-clinicas'
+      fullPath: '/superadmin-clinicas'
+      preLoaderRoute: typeof AuthenticatedSuperadminClinicasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/painel/$token': {
       id: '/painel/$token'
       path: '/$token'
@@ -440,6 +499,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedAtendimentoRoute: typeof AuthenticatedAtendimentoRoute
   AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedChamadaRoute: typeof AuthenticatedChamadaRoute
@@ -453,10 +513,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecepcaoRoute: typeof AuthenticatedRecepcaoRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
+  AuthenticatedSuperadminClinicasRoute: typeof AuthenticatedSuperadminClinicasRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedAtendimentoRoute: AuthenticatedAtendimentoRoute,
   AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedChamadaRoute: AuthenticatedChamadaRoute,
@@ -470,6 +532,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecepcaoRoute: AuthenticatedRecepcaoRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
+  AuthenticatedSuperadminClinicasRoute: AuthenticatedSuperadminClinicasRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -489,6 +552,7 @@ const PainelRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ApresentacaoRoute: ApresentacaoRoute,
   AuthRoute: AuthRoute,
   PainelRoute: PainelRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
